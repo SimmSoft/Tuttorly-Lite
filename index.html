@@ -556,58 +556,9 @@
     prev.textContent=initials;
   }
 
-  el('sAvatar')?.addEventListener('change', (e)=>{
-    const f = e.target.files[0];
-    if(!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      const info = el('avatarInfo');
-      if(info){
-        info.textContent = 'wybrano';
-        info.dataset.dataurl = r.result;
-      }
-      updateAvatarPreviewFrom(el('sName')?.value, r.result);
-    };
-    r.readAsDataURL(f);
-  }); r.onload=()=>{ const info=el('avatarInfo'); if(info){ info.textContent='wybrano'; info.dataset.dataurl=r.result; } }; r.readAsDataURL(f); });
+  el('sAvatar')?.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ const info=el('avatarInfo'); if(info){ info.textContent='wybrano'; info.dataset.dataurl=r.result; } updateAvatarPreviewFrom(el('sName')?.value, r.result); }; r.readAsDataURL(f); }); r.onload=()=>{ const info=el('avatarInfo'); if(info){ info.textContent='wybrano'; info.dataset.dataurl=r.result; } }; r.readAsDataURL(f); });
 
-  el('confirmDialog')?.addEventListener('click',()=>{
-    const name = el('sName')?.value.trim();
-    if(!name){ alert('Podaj imię i nazwisko'); return; }
-    const place = el('sPlace')?.value.trim();
-    const notes = el('sNotes')?.value.trim();
-
-    const pricing = {
-      remote60: numOrNull(el('priceR60')?.value),
-      remote90: numOrNull(el('priceR90')?.value),
-      remote120: numOrNull(el('priceR120')?.value),
-      station60: numOrNull(el('priceS60')?.value),
-      station90: numOrNull(el('priceS90')?.value),
-      station120: numOrNull(el('priceS120')?.value)
-    };
-
-    const selectedAvatar = el('avatarInfo')?.dataset.dataurl;
-    const active = { type: el('activeType')?.value, dur: Number(el('activeDur')?.value) };
-
-    if(dialog?.dataset.editId){
-      const s = state.students.find(x=>x.id===dialog.dataset.editId);
-      if(!s) return;
-      s.name = name; s.place = place; s.notes = notes;
-      s.pricing = { ...(s.pricing||{}), ...pricing };
-      s.active = active;
-      if(selectedAvatar) s.avatar = selectedAvatar; // zachowaj stary, jeśli nie wybrano nowego
-      save();
-      if(currentId===s.id){ selectStudent(s.id,false); }
-    } else {
-      const order=(state.students.reduce((m,x)=>Math.max(m,x.order??-1),-1)+1);
-      state.students.push({ id:uid(), order, name, place, notes, balance:0, pricing, avatar: selectedAvatar, active });
-      save();
-    }
-
-    closeDialog();
-    renderList();
-    if(history.state && history.state.dialog){ history.back(); }
-  }); renderList(); if(history.state && history.state.dialog){ history.back(); }
+  el('confirmDialog')?.addEventListener('click',()=>{$1closeDialog(); renderList(); if(history.state && history.state.dialog){ history.back(); }
   });
   function numOrNull(v){ const n=Number(v); return isNaN(n)? null:n; }
 
