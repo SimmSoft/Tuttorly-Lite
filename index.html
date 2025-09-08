@@ -130,10 +130,9 @@
     .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; height:44px; background:#1a1e27; border:1px solid var(--border); color:#fff; padding:0 14px; border-radius:999px; cursor:pointer; transition:transform .08s ease, background .15s}
     .btn:hover{background:#1f2430}
     .btn:active{transform:scale(.98)}
-    .btn.ghost{background:transparent; color:var(--text)}
+    .btn.ghost{background:transparent; color:#fff}
     .btn.ok{background:var(--okbg); border-color:var(--okbor)}
     .btn.bad{background:var(--dangbg); border-color:var(--dangbor)}
-    .btn.padfix{padding-bottom:2px}
 
     /* Equal width custom input */
     .amountRow #customAmount{ height:44px; border-radius:999px; border:1px solid var(--border); background:#1a1e27; color:var(--text); padding:0 14px; width:100%; }
@@ -185,9 +184,10 @@
     .installbar .label{flex:1; font-size:14px}
     .installbar .close{width:32px; height:32px; border-radius:10px; display:grid; place-items:center; border:1px solid var(--border); cursor:pointer}
     .installbar .action{height:36px; padding:0 12px; border-radius:999px; background:linear-gradient(145deg,var(--accent-2),var(--accent)); color:#0b0c10; border:none; font-weight:800; cursor:pointer}
-    
 
-    @media (max-width:440px){ .phone{width:100%; height:calc(100vh - 48px)} }    /* --- Display-Mode (installed PWA) --- */
+    @media (max-width:440px){ .phone{width:100%; height:calc(100vh - 48px)} }
+    
+    /* --- Display-Mode (installed PWA) --- */
     @media (display-mode: standalone), (display-mode: fullscreen) {
       body{ padding:0; }
       .phone{ width:100vw; height:100dvh; border-radius:0; padding:0; border:0; box-shadow:none; }
@@ -363,6 +363,14 @@
     </div>
   </div>
 
+  <!-- INSTALL BAR -->
+  <div id="installBar" class="installbar">
+    <div class="logo" style="width:28px;height:28px">Tu</div>
+    <div class="label" id="installText">Zainstaluj Tuttorly na ekranie głównym.</div>
+    <button id="installBtn" class="action">Zainstaluj</button>
+    <div id="installClose" class="close">✕</div>
+  </div>
+
   <script>
   const storeKey = 'tuttorly.v11';
   const el = id => document.getElementById(id);
@@ -371,6 +379,13 @@
   let currentId = null;
   let currentView = 'list';
   let pendingDeleteId = null;
+
+  // --- Safe History helpers (no-ops on sandbox/about:srcdoc) ---
+  function canUseHistory(){
+    try{ return !location.href.startsWith('about:') && !!history.pushState; }catch{ return false; }
+  }
+  function safePush(url, st){ if(!canUseHistory()) return; try{ history.pushState(st||{}, '', url||location.href); }catch{} }
+  function safeReplace(url, st){ if(!canUseHistory()) return; try{ history.replaceState(st||{}, '', url||location.href); }catch{} }
 
   function uid(){ return Math.random().toString(36).slice(2,10); }
   function formatPLN(n){ try{ return new Intl.NumberFormat('pl-PL',{style:'currency',currency:'PLN', maximumFractionDigits:0}).format(n);}catch{ return Math.round(n)+' zł'; } }
@@ -405,9 +420,8 @@
   document.addEventListener('click', (e)=>{
     const backBtn = e.target.closest ? e.target.closest('#inlineBack') : null;
     if(backBtn){
-      // Jeśli otwarty dialog – zamknij go krokiem „wstecz”, inaczej wróć do listy
-      if(dialog && dialog.style.display==='flex'){ history.back(); return; }
-      if(history.length>1){ history.back(); } else { setView('list'); }
+      if(dialog && dialog.style.display==='flex'){ closeDialog(); return; }
+      setView('list');
     }
   });
 
@@ -478,12 +492,12 @@
 
   function escapeHtml(str){ return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-  function selectStudent(id, pushHistory=true){
+  function selectStudent(id){
     currentId=id; const s=state.students.find(x=>x.id===id); if(!s) return;
     setView('detail'); setReadOnly(true);
     el('dName').value=s.name||''; el('dPlace').value=s.place||''; el('dNotes').value=s.notes||'';
     renderAvatar(s); renderBalance(s.balance); updateMap(s.place); renderActiveSummary();
-    if(pushHistory){ history.pushState({screen:'detail', id}, '', '#detail-'+id); }
+    safePush('#detail-'+id, {screen:'detail', id}); // no-op in sandbox
   }
 
   function renderAvatar(s){ const dA=el('dAvatar'); dA.innerHTML=''; if(s.avatar){ const img=document.createElement('img'); img.src=s.avatar; img.alt='avatar'; dA.appendChild(img);} else { dA.textContent=(s.name||'?').split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase(); } }
@@ -501,9 +515,15 @@
   function resetBalance(){ const s=state.students.find(x=>x.id===currentId); if(!s) return; s.balance=0; save(); renderBalance(s.balance); renderList(); }
 
   const dialog=el('dialogWrap');
+  function updateAvatarPreviewFrom(name, dataurl){
+    const prev = el('avatarPreview'); if(!prev) return;
+    prev.innerHTML='';
+    if(dataurl){ const img=document.createElement('img'); img.src=dataurl; img.alt='avatar'; prev.appendChild(img); return; }
+    const initials=(name||'')?.split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase() || 'A';
+    prev.textContent=initials;
+  }
+
   function openDialog(editId){ if(!dialog) return; dialog.style.display='flex';
-    // push history state for dialog so przycisk cofania zamknie edycję
-    try{ history.pushState({screen:'detail', id: currentId, dialog:true}, '', '#edit-'+(editId||'new')); }catch{}
     const title=el('dialogTitle'); const sName=el('sName'); const sPlace=el('sPlace'); const sNotes=el('sNotes');
     const pR60=el('priceR60'); const pR90=el('priceR90'); const pR120=el('priceR120'); const pS60=el('priceS60'); const pS90=el('priceS90'); const pS120=el('priceS120');
     const aInfo=el('avatarInfo'); const aType=el('activeType'); const aDur=el('activeDur'); const delBtn=el('deleteBtn');
@@ -515,18 +535,20 @@
       aInfo && (aInfo.textContent=s.avatar?'ustawiono':'(opcjonalnie)');
       aType && (aType.value=s.active?.type||'remote'); aDur && (aDur.value=String(s.active?.dur||60)); dialog.dataset.editId=editId;
       if(delBtn) delBtn.style.display='inline-flex';
+      updateAvatarPreviewFrom(s.name, s.avatar);
     } else {
       title && (title.textContent='Nowy uczeń'); sName && (sName.value=''); sPlace && (sPlace.value=''); sNotes && (sNotes.value='');
       pR60 && (pR60.value=''); pR90 && (pR90.value=''); pR120 && (pR120.value=''); pS60 && (pS60.value=''); pS90 && (pS90.value=''); pS120 && (pS120.value='');
       aInfo && (aInfo.textContent='(opcjonalnie)'); aType && (aType.value='remote'); aDur && (aDur.value='60'); delete dialog.dataset.editId;
       if(delBtn) delBtn.style.display='none';
+      updateAvatarPreviewFrom('', null);
     }
     setTimeout(()=>sName&&sName.focus(),50);
   }
   function closeDialog(){ dialog && (dialog.style.display='none'); }
   el('addBtn')?.addEventListener('click',()=>{ if(currentView!=='list') return; openDialog(); });
   el('editBtn')?.addEventListener('click',()=>{ if(currentId){ openDialog(currentId); setReadOnly(false);} });
-  el('cancelDialog')?.addEventListener('click',()=>{ closeDialog(); if(history.state && history.state.dialog){ history.back(); }});
+  el('cancelDialog')?.addEventListener('click',()=>{ closeDialog(); });
   el('deleteBtn')?.addEventListener('click',()=>{
     if(!dialog?.dataset.editId) return;
     pendingDeleteId = dialog.dataset.editId;
@@ -543,7 +565,11 @@
     const cw=el('confirmWrap'); if(cw) cw.style.display='none';
     closeDialog(); setView('list'); currentId=null; renderList();
   });
-  el('sAvatar')?.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ const info=el('avatarInfo'); if(info){ info.textContent='wybrano'; info.dataset.dataurl=r.result; } }; r.readAsDataURL(f); });
+
+  // Avatar upload UX
+  el('avatarUpload')?.addEventListener('click',()=> el('sAvatar')?.click());
+  el('avatarPick')?.addEventListener('click',(e)=>{ e.stopPropagation(); el('sAvatar')?.click(); });
+  el('sAvatar')?.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ const info=el('avatarInfo'); if(info){ info.textContent='wybrano'; info.dataset.dataurl=r.result; } updateAvatarPreviewFrom(el('sName')?.value, r.result); }; r.readAsDataURL(f); });
 
   el('confirmDialog')?.addEventListener('click',()=>{
     const name=el('sName')?.value.trim(); if(!name){ alert('Podaj imię i nazwisko'); return; }
@@ -571,36 +597,36 @@
   setView('list');
   updateMap('Polska');
 
-  // SPA history: initial list state
-  try{ if(!history.state) history.replaceState({screen:'list'}, '', location.pathname + location.search); }catch{}
-
-  // Handle hardware/browser back
-  window.addEventListener('popstate', (e)=>{
-    const st = e.state || {screen:'list'};
-    const isDialogOpen = dialog && dialog.style.display==='flex';
-    if(st.dialog){ // ensure dialog visible (we already push on open)
-      if(!isDialogOpen && currentId){ openDialog(currentId); }
-      return;
-    }
-    if(isDialogOpen){ closeDialog(); return; }
-    if(st.screen==='detail' && st.id){ selectStudent(st.id, false); }
-    else { setView('list'); }
-  });
+  // (Optional) seed history when supported (no-op in sandbox)
+  safeReplace(location.pathname + location.search, {screen:'list'});
 
   // Register Service Worker for installability & offline
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       const swScope='/Tuttorly-Lite/';
-      navigator.serviceWorker.register(swScope + 'sw.js', { scope: swScope }).catch(console.error);
+      try{ navigator.serviceWorker.register(swScope + 'sw.js', { scope: swScope }); }catch(e){}
     });
   }
+
+  // --- Add to Home Screen (A2HS) banner ---
+  (function(){
+    let deferredPrompt=null;
+    const BAR = ()=>document.getElementById('installBar');
+    const BTN = ()=>document.getElementById('installBtn');
+    const TXT = ()=>document.getElementById('installText');
+    const CLOSEI = ()=>document.getElementById('installClose');
+    const isStandalone=()=> window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    const isMobile=()=> /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    function showBarAndroid(){ const bar=BAR(), txt=TXT(), btn=BTN(); if(!bar || localStorage.getItem('a2hs.dismissed')==='1') return; if(isStandalone()) return; bar.style.display='flex'; if(txt) txt.textContent='Zainstaluj Tuttorly na ekranie głównym.'; if(btn) btn.style.display='inline-block'; }
+    function showBarIOS(){ const bar=BAR(), txt=TXT(), btn=BTN(); if(!bar || localStorage.getItem('a2hs.dismissed')==='1') return; if(isStandalone()) return; bar.style.display='flex'; if(txt) txt.textContent='Na iOS: Udostępnij → „Do ekranu głównego”.'; if(btn) btn.style.display='none'; }
+
+    window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); deferredPrompt=e; if(isMobile()) showBarAndroid(); });
+    BTN()?.addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); const choice=await deferredPrompt.userChoice; deferredPrompt=null; const bar=BAR(); if(bar) bar.style.display='none'; if(choice && choice.outcome==='dismissed'){ localStorage.setItem('a2hs.dismissed','1'); }});
+    CLOSEI()?.addEventListener('click', ()=>{ const bar=BAR(); if(bar) bar.style.display='none'; localStorage.setItem('a2hs.dismissed','1'); });
+    window.addEventListener('appinstalled', ()=>{ const bar=BAR(); if(bar) bar.style.display='none'; localStorage.removeItem('a2hs.dismissed'); });
+    window.addEventListener('load', ()=>{ const isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent); if(isiOS && isMobile() && !isStandalone()) showBarIOS(); });
+  })();
   </script>
-  <!-- INSTALL BAR -->
-  <div id="installBar" class="installbar">
-    <div class="logo" style="width:28px;height:28px">Tu</div>
-    <div class="label" id="installText">Zainstaluj Tuttorly na ekranie głównym.</div>
-    <button id="installBtn" class="action">Zainstaluj</button>
-    <div id="installClose" class="close">✕</div>
-  </div>
 </body>
 </html>
