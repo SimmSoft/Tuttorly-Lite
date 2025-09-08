@@ -515,8 +515,6 @@
       aInfo && (aInfo.textContent=s.avatar?'ustawiono':'(opcjonalnie)');
       aType && (aType.value=s.active?.type||'remote'); aDur && (aDur.value=String(s.active?.dur||60)); dialog.dataset.editId=editId;
       if(delBtn) delBtn.style.display='inline-flex';
-      updateAvatarPreviewFrom(s.name, s.avatar);
-    
     } else {
       title && (title.textContent='Nowy uczeń'); sName && (sName.value=''); sPlace && (sPlace.value=''); sNotes && (sNotes.value='');
       pR60 && (pR60.value=''); pR90 && (pR90.value=''); pR120 && (pR120.value=''); pS60 && (pS60.value=''); pS90 && (pS90.value=''); pS120 && (pS120.value='');
@@ -545,20 +543,18 @@
     const cw=el('confirmWrap'); if(cw) cw.style.display='none';
     closeDialog(); setView('list'); currentId=null; renderList();
   });
-  el('avatarUpload')?.addEventListener('click',()=> el('sAvatar')?.click());
-  el('avatarPick')?.addEventListener('click',(e)=>{ e.stopPropagation(); el('sAvatar')?.click(); });
+  el('sAvatar')?.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ const info=el('avatarInfo'); if(info){ info.textContent='wybrano'; info.dataset.dataurl=r.result; } }; r.readAsDataURL(f); });
 
-  function updateAvatarPreviewFrom(name, dataurl){
-    const prev = el('avatarPreview'); if(!prev) return;
-    prev.innerHTML='';
-    if(dataurl){ const img=document.createElement('img'); img.src=dataurl; img.alt='avatar'; prev.appendChild(img); return; }
-    const initials=(name||'').split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase() || 'A';
-    prev.textContent=initials;
-  }
+  el('confirmDialog')?.addEventListener('click',()=>{
+    const name=el('sName')?.value.trim(); if(!name){ alert('Podaj imię i nazwisko'); return; }
+    const place=el('sPlace')?.value.trim(); const notes=el('sNotes')?.value.trim();
+    const pricing={ remote60:numOrNull(el('priceR60')?.value), remote90:numOrNull(el('priceR90')?.value), remote120:numOrNull(el('priceR120')?.value), station60:numOrNull(el('priceS60')?.value), station90:numOrNull(el('priceS90')?.value), station120:numOrNull(el('priceS120')?.value)};
+    const avatar=el('avatarInfo')?.dataset.dataurl; const active={ type:el('activeType')?.value, dur:Number(el('activeDur')?.value) };
 
-  el('sAvatar')?.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ const info=el('avatarInfo'); if(info){ info.textContent='wybrano'; info.dataset.dataurl=r.result; } updateAvatarPreviewFrom(el('sName')?.value, r.result); }; r.readAsDataURL(f); }); r.onload=()=>{ const info=el('avatarInfo'); if(info){ info.textContent='wybrano'; info.dataset.dataurl=r.result; } }; r.readAsDataURL(f); });
-
-  el('confirmDialog')?.addEventListener('click',()=>{$1closeDialog(); renderList(); if(history.state && history.state.dialog){ history.back(); }
+    if(dialog?.dataset.editId){
+      const s=state.students.find(x=>x.id===dialog.dataset.editId); if(!s) return; s.name=name; s.place=place; s.notes=notes; s.pricing={...(s.pricing||{}),...pricing}; s.active=active; if(avatar) s.avatar=avatar; save(); if(currentId===s.id){ selectStudent(s.id);} }
+    else { const order=(state.students.reduce((m,x)=>Math.max(m,x.order??-1),-1)+1); state.students.push({id:uid(), order, name, place, notes, balance:0, pricing, avatar, active}); save(); }
+    closeDialog(); renderList();
   });
   function numOrNull(v){ const n=Number(v); return isNaN(n)? null:n; }
 
@@ -598,18 +594,6 @@
       navigator.serviceWorker.register(swScope + 'sw.js', { scope: swScope }).catch(console.error);
     });
   }
-
-  // --- Add to Home Screen (A2HS) banner ---
-  let deferredPrompt=null; const bar=el('installBar'); const btn=el('installBtn'); const txt=el('installText'); const closeI=el('installClose');
-  const isStandalone=()=> window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-  const isMobile=()=> /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-  function showBarAndroid(){ if(!bar || localStorage.getItem('a2hs.dismissed')==='1') return; if(isStandalone()) return; bar.style.display='flex'; txt && (txt.textContent='Zainstaluj Tuttorly na ekranie głównym.'); if(btn) btn.style.display='inline-block'; }
-  function showBarIOS(){ if(!bar || localStorage.getItem('a2hs.dismissed')==='1') return; if(isStandalone()) return; bar.style.display='flex'; txt && (txt.textContent='Na iOS: Udostępnij → „Do ekranu głównego”.'); if(btn) btn.style.display='none'; }
-  window.addEventListener('beforeinstallprompt', (e)=>{ e.preventDefault(); deferredPrompt=e; if(isMobile()) showBarAndroid(); });
-  btn?.addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); const choice=await deferredPrompt.userChoice; deferredPrompt=null; bar.style.display='none'; if(choice && choice.outcome==='dismissed'){ localStorage.setItem('a2hs.dismissed','1'); }});
-  closeI?.addEventListener('click', ()=>{ bar.style.display='none'; localStorage.setItem('a2hs.dismissed','1'); });
-  window.addEventListener('appinstalled', ()=>{ bar && (bar.style.display='none'); localStorage.removeItem('a2hs.dismissed'); });
-  window.addEventListener('load', ()=>{ const isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent); if(isiOS && isMobile() && !isStandalone()) showBarIOS(); });
   </script>
   <!-- INSTALL BAR -->
   <div id="installBar" class="installbar">
