@@ -2,7 +2,13 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0c10" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
   <title>Tuttorly — Minimal Demo</title>
   <style>
     :root{
@@ -151,7 +157,7 @@
 
     /* MODAL */
     .dialog-wrap{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.5); z-index:30}
-    .dialog{width:520px; max-width:92vw; background:#0f1218; border:1px solid var(--border); border-radius:18px; padding:16px; box-shadow:var(--shadow)}
+    .dialog{width:520px; max-width:92vw; background:#0f1218; border:1px solid var(--border); border-radius:18px; padding:16px; box-shadow:var(--shadow); max-height:90vh; overflow:auto}
     .dialog h3{margin:10px 0 8px}
     .dialog .row{margin:6px 0}
     .priceRow{display:flex; align-items:center; gap:10px}
@@ -160,10 +166,32 @@
     .divider{display:flex; align-items:center; gap:10px; margin:10px 0 6px;}
     .divider::before, .divider::after{content:''; height:1px; background:var(--border); flex:1}
     .divider span{font-size:12px; color:var(--muted); letter-spacing:.4px}
-    .footer{display:flex; justify-content:flex-end; gap:10px; margin-top:14px}
+    .footer{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:14px}
+    .footerRight{display:flex; gap:10px}
+    .btn.danger{background:linear-gradient(145deg,#ef4444,#dc2626); border-color:transparent; color:#fff; font-weight:700}
     .btn.primary{background:linear-gradient(145deg,var(--accent-2),var(--accent)); border-color:transparent; color:#0b0c10; font-weight:900}
 
-    @media (max-width:440px){ .phone{width:100%; height:calc(100vh - 48px)} }
+    @media (max-width:440px){ .phone{width:100%; height:calc(100vh - 48px)} }    /* --- Display-Mode (installed PWA) --- */
+    @media (display-mode: standalone), (display-mode: fullscreen) {
+      body{ padding:0; }
+      .phone{ width:100vw; height:100dvh; border-radius:0; padding:0; border:0; box-shadow:none; }
+      .notch{ display:none; }
+      .screen{ border:0; border-radius:0; padding: calc(12px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom)) 12px; }
+    }
+
+    /* --- Mobile fullscreen mode (hide mockup chrome, respect notches) --- */
+    @media (max-width: 600px), (pointer: coarse) {
+      .phone{ width:100vw; height:100dvh; border-radius:0; padding:0; border:0; box-shadow:none; }
+      .notch{ display:none; }
+      .screen{ border:0; border-radius:0; padding: calc(12px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom)) 12px; }
+      .fab{ right: calc(16px + env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); }
+      .copyright{ padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+      .map{ height: 280px; }
+      /* Dialog fullscreen with internal scroll so content is always reachable */
+      .dialog-wrap{ align-items:stretch; justify-content:stretch; }
+      .dialog{ width:100vw; max-width:100vw; height:100dvh; max-height:100dvh; border-radius:0; overflow:auto; }
+      .dialog .footer{ position:sticky; bottom:0; background:#0f1218; padding-top:8px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); border-top:1px solid var(--border); }
+    }
   </style>
 </head>
 <body>
@@ -284,8 +312,26 @@
       </div>
 
       <div class="footer">
-        <button class="btn ghost" id="cancelDialog">Anuluj</button>
-        <button class="btn primary" id="confirmDialog">Zapisz</button>
+        <button class="btn danger" id="deleteBtn" style="display:none">Usuń ucznia</button>
+        <div class="footerRight">
+          <button class="btn ghost" id="cancelDialog">Anuluj</button>
+          <button class="btn primary" id="confirmDialog">Zapisz</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONFIRM DELETE MODAL -->
+  <div class="dialog-wrap" id="confirmWrap" style="display:none">
+    <div class="dialog">
+      <h3>Usunąć ucznia?</h3>
+      <p id="confirmText" class="muted">Tej operacji nie można cofnąć.</p>
+      <div class="footer">
+        <div></div>
+        <div class="footerRight">
+          <button class="btn ghost" id="confirmCancel">Anuluj</button>
+          <button class="btn danger" id="confirmDelete">Usuń</button>
+        </div>
       </div>
     </div>
   </div>
@@ -297,6 +343,7 @@
   let state = load();
   let currentId = null;
   let currentView = 'list';
+  let pendingDeleteId = null;
 
   function uid(){ return Math.random().toString(36).slice(2,10); }
   function formatPLN(n){ try{ return new Intl.NumberFormat('pl-PL',{style:'currency',currency:'PLN', maximumFractionDigits:0}).format(n);}catch{ return Math.round(n)+' zł'; } }
@@ -425,7 +472,7 @@
   function openDialog(editId){ if(!dialog) return; dialog.style.display='flex';
     const title=el('dialogTitle'); const sName=el('sName'); const sPlace=el('sPlace'); const sNotes=el('sNotes');
     const pR60=el('priceR60'); const pR90=el('priceR90'); const pR120=el('priceR120'); const pS60=el('priceS60'); const pS90=el('priceS90'); const pS120=el('priceS120');
-    const aInfo=el('avatarInfo'); const aType=el('activeType'); const aDur=el('activeDur');
+    const aInfo=el('avatarInfo'); const aType=el('activeType'); const aDur=el('activeDur'); const delBtn=el('deleteBtn');
 
     if(editId){ const s=state.students.find(x=>x.id===editId); if(!s) return;
       title && (title.textContent='Edytuj ucznia'); sName && (sName.value=s.name||''); sPlace && (sPlace.value=s.place||''); sNotes && (sNotes.value=s.notes||'');
@@ -433,10 +480,12 @@
       pS60 && (pS60.value=s.pricing?.station60??''); pS90 && (pS90.value=s.pricing?.station90??''); pS120 && (pS120.value=s.pricing?.station120??'');
       aInfo && (aInfo.textContent=s.avatar?'ustawiono':'(opcjonalnie)');
       aType && (aType.value=s.active?.type||'remote'); aDur && (aDur.value=String(s.active?.dur||60)); dialog.dataset.editId=editId;
+      if(delBtn) delBtn.style.display='inline-flex';
     } else {
       title && (title.textContent='Nowy uczeń'); sName && (sName.value=''); sPlace && (sPlace.value=''); sNotes && (sNotes.value='');
       pR60 && (pR60.value=''); pR90 && (pR90.value=''); pR120 && (pR120.value=''); pS60 && (pS60.value=''); pS90 && (pS90.value=''); pS120 && (pS120.value='');
       aInfo && (aInfo.textContent='(opcjonalnie)'); aType && (aType.value='remote'); aDur && (aDur.value='60'); delete dialog.dataset.editId;
+      if(delBtn) delBtn.style.display='none';
     }
     setTimeout(()=>sName&&sName.focus(),50);
   }
@@ -444,6 +493,22 @@
   el('addBtn')?.addEventListener('click',()=>{ if(currentView!=='list') return; openDialog(); });
   el('editBtn')?.addEventListener('click',()=>{ if(currentId){ openDialog(currentId); setReadOnly(false);} });
   el('cancelDialog')?.addEventListener('click',closeDialog);
+  el('deleteBtn')?.addEventListener('click',()=>{
+    if(!dialog?.dataset.editId) return;
+    pendingDeleteId = dialog.dataset.editId;
+    const s = state.students.find(x=>x.id===pendingDeleteId);
+    const name = s?.name || 'tego ucznia';
+    const txt = el('confirmText'); if(txt) txt.textContent = `Na pewno chcesz usunąć "${name}"? Tej operacji nie można cofnąć.`;
+    const cw = el('confirmWrap'); if(cw) cw.style.display='flex';
+  });
+  el('confirmCancel')?.addEventListener('click',()=>{ pendingDeleteId=null; const cw=el('confirmWrap'); if(cw) cw.style.display='none'; });
+  el('confirmDelete')?.addEventListener('click',()=>{
+    if(!pendingDeleteId) return;
+    state.students = state.students.filter(x=>x.id!==pendingDeleteId);
+    save(); pendingDeleteId=null;
+    const cw=el('confirmWrap'); if(cw) cw.style.display='none';
+    closeDialog(); setView('list'); currentId=null; renderList();
+  });
   el('sAvatar')?.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ const info=el('avatarInfo'); if(info){ info.textContent='wybrano'; info.dataset.dataurl=r.result; } }; r.readAsDataURL(f); });
 
   el('confirmDialog')?.addEventListener('click',()=>{
@@ -471,6 +536,13 @@
   renderList();
   setView('list');
   updateMap('Polska');
+
+  // Register Service Worker for installability & offline
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch(console.error);
+    });
+  }
   </script>
 </body>
 </html>
