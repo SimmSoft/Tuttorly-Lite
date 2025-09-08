@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tuttorly — Minimal Demo</title>
+  <style>
+    :root{
+      --bg:#0b0c10;
+      --phone:#111216;
+      --card:#181a1f;
+      --muted:#9aa3ad;
+      --text:#e9ecf1;
+      --accent:#6ee7ff;
+      --accent-2:#8b5cf6;
+      --danger:#ef4444;
+      --ok:#22c55e;
+      --okbg:rgba(34,197,94,.12);
+      --okbor:rgba(34,197,94,.45);
+      --dangbg:rgba(239,68,68,.12);
+      --dangbor:rgba(239,68,68,.45);
+      --border:rgba(255,255,255,0.08);
+      --shadow:0 10px 30px rgba(0,0,0,.35);
+      --goodbg:rgba(34,197,94,.12);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:radial-gradient(1200px 800px at 10% 10%,rgba(139,92,246,.25),transparent),
+                           radial-gradient(900px 700px at 90% 80%,rgba(110,231,255,.2),transparent),
+                           var(--bg);
+      color:var(--text); font:500 16px/1.4 system-ui, Segoe UI, Roboto, Inter, Arial;
+      display:grid; place-items:center; padding:24px;
+      overflow:hidden;
+    }
+
+    /* SPLASH */
+    .splash{position:fixed; inset:0; display:grid; place-items:center; z-index:20;
+      background:radial-gradient(1200px 800px at 10% 10%,rgba(139,92,246,.25),transparent),
+                 radial-gradient(900px 700px at 90% 80%,rgba(110,231,255,.2),transparent),
+                 var(--bg);
+      animation: splashFade 1.2s ease 1.2s forwards;
+    }
+    .splash-logo{font-weight:900; font-size:48px; letter-spacing:.6px;
+      background:linear-gradient(145deg,var(--accent),var(--accent-2));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+      animation: popIn .8s ease;
+    }
+    @keyframes popIn{from{transform:scale(.9); opacity:0} to{transform:scale(1); opacity:1}}
+    @keyframes splashFade{to{opacity:0; visibility:hidden}}
+
+    /* PHONE MOCKUP */
+    .phone{ width:380px; height:760px; background:var(--phone);
+      border-radius:40px; position:relative; box-shadow:var(--shadow);
+      border:1px solid var(--border); padding:18px; display:flex; flex-direction:column;
+      opacity:0; transition:opacity .6s ease; }
+    .phone.show{opacity:1}
+    .notch{position:absolute; top:10px; left:50%; transform:translateX(-50%);
+      width:140px; height:22px; background:#0c0d11; border-radius:0 0 14px 14px; border:1px solid var(--border);}    
+    .screen{flex:1; background:linear-gradient(180deg,#0f1117, #0c0e12 60%);
+      border-radius:28px; padding:16px; overflow:auto; display:flex; flex-direction:column; border:1px solid var(--border); scroll-behavior:smooth;}
+
+    /* APP CHROME */
+    .appbar{display:flex; align-items:center; gap:10px; padding:2px 6px 6px 6px;}
+    .logo{width:28px; height:28px; border-radius:9px; background:linear-gradient(145deg,var(--accent),var(--accent-2)); display:grid; place-items:center; font-weight:800; color:#0b0c10}
+    .title{font-weight:800; letter-spacing:.2px}
+    .spacer{flex:1}
+    .iconbtn{width:38px; height:38px; border-radius:12px; display:grid; place-items:center; cursor:pointer; border:1px solid var(--border); background:#151821}
+    .iconbtn svg{width:18px; height:18px; fill:currentColor; color:var(--text)}
+    .iconbtn.ghost{background:transparent}
+    .iconbtn.primary{
+      /* Upodobnione do FAB (+) */
+      background:linear-gradient(145deg, var(--accent-2), var(--accent));
+      border:none;
+      border-radius:14px;
+      color:#0b0c10;
+      box-shadow:0 10px 22px rgba(0,0,0,.35);
+      transition:transform .08s ease, filter .15s ease;
+    }
+    .iconbtn.primary svg{color:#0b0c10}
+    .iconbtn.primary:hover{filter:brightness(1.05)}
+    .iconbtn.primary:active{transform:scale(.97)} 
+
+    /* BADGE */
+    .tabs{display:flex; gap:8px; margin:8px 0 12px}
+    .tab{flex:1; text-align:center; padding:10px; border-radius:12px; border:1px solid var(--border); color:var(--muted)}
+    .tab.active{background:linear-gradient(180deg,rgba(139,92,246,.17),rgba(110,231,255,.12)); color:var(--text)}
+
+    /* LIST */
+    .list{display:flex; flex-direction:column; gap:10px; overflow:auto; padding-right:4px}
+    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:12px; display:flex; gap:12px; align-items:center; cursor:grab; transition:transform .05s ease, background .15s}
+    .card:hover{background:#1a1e27}
+    .card:active{transform:scale(.995)}
+    .card.dragging{opacity:.85; box-shadow:0 12px 28px rgba(0,0,0,.4);}
+    .placeholder{border:2px dashed rgba(255,255,255,.15); border-radius:16px; height:68px; margin:4px 0}
+    .avatar{width:44px; height:44px; border-radius:14px; background:linear-gradient(145deg,#1f2430,#111319); display:grid; place-items:center; color:var(--muted); font-weight:700; overflow:hidden}
+    .avatar img{width:100%; height:100%; object-fit:cover}
+    .meta{flex:1}
+    .meta .name{font-weight:700}
+    .meta .sub{color:var(--muted); font-size:12px}
+    .amount{font-weight:800}
+    .amount.pos{color:var(--ok)}
+    .amount.neg{color:var(--danger)}
+
+    /* DETAIL */
+    .detail{display:none; flex-direction:column; gap:12px; min-height:100%;}
+    .row{display:flex; gap:8px}
+    .detailTop{display:flex; align-items:center; justify-content:space-between;}
+    input, textarea, select, button{ font:inherit; }
+    input, textarea, select{ width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#101219; color:var(--text);}    
+    textarea{min-height:92px; resize:vertical}
+    .readonly input, .readonly textarea, .readonly select{opacity:.75; pointer-events:none}
+    .readonly #customAmount{opacity:1; pointer-events:auto}
+
+    /* HIDE number spinners */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0 }
+    input[type=number]{ -moz-appearance:textfield }
+
+    /* ACTION BUTTONS */
+    .actions{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:4px}
+    .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; height:44px; background:#1a1e27; border:1px solid var(--border); color:#fff; padding:0 14px; border-radius:999px; cursor:pointer; transition:transform .08s ease, background .15s}
+    .btn:hover{background:#1f2430}
+    .btn:active{transform:scale(.98)}
+    .btn.ghost{background:transparent; color:var(--text)}
+    .btn.ok{background:var(--okbg); border-color:var(--okbor)}
+    .btn.bad{background:var(--dangbg); border-color:var(--dangbor)}
+    .btn.padfix{padding-bottom:2px}
+
+    /* Equal width custom input */
+    .amountRow #customAmount{ height:44px; border-radius:999px; border:1px solid var(--border); background:#1a1e27; color:var(--text); padding:0 14px; width:100%; }
+    .amountRow{margin-top:4px}
+
+    .muted{color:var(--muted)}
+    .center-avatar{display:flex; justify-content:center; margin-top:8px}
+    .avatar.big{width:80px; height:80px; border-radius:22px; border:2px solid rgba(255,255,255,.12); background:linear-gradient(145deg,#1f2430,#111319); box-shadow:0 10px 18px rgba(0,0,0,.28)}
+
+    .balanceWrap{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:12px}
+    .balanceWrap.highlight{background:var(--goodbg); outline:1px solid rgba(34,197,94,.3)}
+    .badge{padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.12);}
+
+    /* MAP */
+    .map-wrap{position:relative}
+    .map{border:0; width:100%; height:340px; border-radius:14px; border:1px solid var(--border); pointer-events:auto}
+
+    /* FOOTER */
+    .copyright{margin-top:12px; text-align:center; color:var(--muted); font-size:12px}
+
+    /* FAB */
+    .fab{position:absolute; right:26px; bottom:64px; width:56px; height:56px; border-radius:20px; display:grid; place-items:center; cursor:pointer; background:linear-gradient(145deg,var(--accent-2), var(--accent)); color:#0b0c10; font-weight:900; border:none; box-shadow:0 10px 22px rgba(0,0,0,.35); z-index:5}
+
+    /* MODAL */
+    .dialog-wrap{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.5); z-index:30}
+    .dialog{width:520px; max-width:92vw; background:#0f1218; border:1px solid var(--border); border-radius:18px; padding:16px; box-shadow:var(--shadow)}
+    .dialog h3{margin:10px 0 8px}
+    .dialog .row{margin:6px 0}
+    .priceRow{display:flex; align-items:center; gap:10px}
+    .priceRow .price{width:110px}
+    .priceRow .label{font-size:14px; color:var(--muted)}
+    .divider{display:flex; align-items:center; gap:10px; margin:10px 0 6px;}
+    .divider::before, .divider::after{content:''; height:1px; background:var(--border); flex:1}
+    .divider span{font-size:12px; color:var(--muted); letter-spacing:.4px}
+    .footer{display:flex; justify-content:flex-end; gap:10px; margin-top:14px}
+    .btn.primary{background:linear-gradient(145deg,var(--accent-2),var(--accent)); border-color:transparent; color:#0b0c10; font-weight:900}
+
+    @media (max-width:440px){ .phone{width:100%; height:calc(100vh - 48px)} }
+  </style>
+</head>
+<body>
+
+  <!-- SPLASH SCREEN -->
+  <div class="splash" id="splash">
+    <div class="splash-logo">Tuttorly</div>
+  </div>
+
+  <div class="phone" id="phone">
+    <div class="notch"></div>
+    <div class="screen">
+      <div class="appbar">
+        <div class="logo">Tu</div>
+        <div class="title">Tuttorly</div>
+        <div class="spacer"></div>
+        <label class="iconbtn" for="importFile" title="Import JSON">
+          <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v9h18v-9h-2zm-6 0 4-4-1.41-1.41L13 8.17V2h-2v6.17l-2.59-2.58L7 8l6 6z"/></svg>
+        </label>
+        <div class="iconbtn" id="exportBtn" title="Eksport JSON">
+          <svg viewBox="0 0 24 24"><path d="M19 21H5v-7H3v9h18v-9h-2v7zM7 8l1.41 1.41L11 6.83V14h2V6.83l2.59 2.58L17 8l-5-5-5 5z"/></svg>
+        </div>
+        <div class="iconbtn ghost" id="settingsBtn" title="Ustawienia (wkrótce)">
+          <svg viewBox="0 0 24 24"><path d="M19.14,12.94a7.43,7.43,0,0,0,.05-.94,7.43,7.43,0,0,0-.05-.94l2.11-1.65a.5.5,0,0,0,.12-.64l-2-3.46a.5.5,0,0,0-.6-.22l-2.49,1a7.26,7.26,0,0,0-1.63-.94l-.38-2.65A.5.5,0,0,0,13.72,1H10.28a.5.5,0,0,0-.49.41L9.41,4.06a7.26,7.26,0,0,0-1.63.94l-2.49-1a.5.5,0,0,0-.6.22l-2,3.46a.5.5,0,0,0,.12.64L3.86,11.06a7.43,7.43,0,0,0-.05.94,7.43,7.43,0,0,0,.05.94L1.75,14.59a.5.5,0,0,0-.12.64l2,3.46a.5.5,0,0,0,.6.22l2.49-1a7.26,7.26,0,0,0,1.63.94l.38,2.65a.5.5,0,0,0,.49.41h3.44a.5.5,0,0,0,.49-.41l.38-2.65a7.26,7.26,0,0,0,1.63-.94l2.49,1a.5.5,0,0,0,.6-.22l2-3.46a.5.5,0,0,0-.12-.64ZM12,15.5A3.5,3.5,0,1,1,15.5,12,3.5,3.5,0,0,1,12,15.5Z"/></svg>
+        </div>
+        <input id="importFile" type="file" accept="application/json" style="display:none" />
+      </div>
+
+      <div class="tabs"><div class="tab active" id="viewBadge">Uczniowie</div></div>
+
+      <!-- LIST VIEW -->
+      <div class="list" id="listView"></div>
+
+      <!-- DETAIL VIEW -->
+      <div class="detail readonly" id="detailView">
+        <!-- top row with actions -->
+        <div class="detailTop">
+          <div class="iconbtn primary" id="inlineBack" title="Wróć">
+            <svg viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+          </div>
+          <div class="iconbtn primary" id="editBtn" title="Edytuj ucznia">
+            <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/></svg>
+          </div>
+        </div>
+        <div class="center-avatar"><div class="avatar big" id="dAvatar"></div></div>
+
+        <div class="row"><input id="dName" placeholder="Imię i nazwisko" /></div>
+        <div class="row"><input id="dPlace" placeholder="Miejsce (miasto, ulica)" /></div>
+        <div class="row"><textarea id="dNotes" placeholder="Notatki o uczniu (preferencje, zakres, uwagi)"></textarea></div>
+
+        <div class="row" style="align-items:center">
+          <div id="balanceWrap" class="balanceWrap">
+            <span class="muted">Nadwyżka:</span>
+            <span id="dBalance" class="amount">0 zł</span>
+            <span id="freeBadge" class="badge" style="display:none">Darmowa lekcja</span>
+          </div>
+          <div class="spacer"></div>
+        </div>
+
+        <div class="row" id="activeRowView">
+          <div class="badge" id="activeBadge">Aktywne: —</div>
+          <div class="badge" id="priceBadge">Cena: —</div>
+        </div>
+
+        <div class="actions">
+          <button class="btn ok" id="plus10">+10 zł</button>
+          <button class="btn bad" id="minus10">−10 zł</button>
+          <button class="btn ghost" id="resetBtn" title="Wyzeruj saldo">Wyzeruj</button>
+        </div>
+
+        <div class="actions amountRow">
+          <button class="btn ok padfix" id="addPlus">+ kwota</button>
+          <button class="btn bad padfix" id="addMinus">− kwota</button>
+          <input id="customAmount" type="number" placeholder="Custom" />
+        </div>
+
+        <div class="map-wrap"><iframe class="map" id="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>
+      </div>
+
+      <div class="copyright">© SimmSoft 2025</div>
+      <button class="fab" id="addBtn" title="Dodaj ucznia">+</button>
+    </div>
+  </div>
+
+  <!-- DIALOG -->
+  <div class="dialog-wrap" id="dialogWrap">
+    <div class="dialog">
+      <h3 id="dialogTitle">Nowy uczeń</h3>
+      <div class="row"><input id="sName" placeholder="Imię i nazwisko" /></div>
+      <div class="row"><input id="sPlace" placeholder="Miejsce (miasto, ulica)" /></div>
+      <div class="row"><textarea id="sNotes" placeholder="Notatki"></textarea></div>
+
+      <h3 style="margin-top:8px">Media</h3>
+      <div class="row"><label style="display:flex; gap:10px; align-items:center"><input type="file" id="sAvatar" accept="image/*" /><span>Avatar: <b id="avatarInfo">(opcjonalnie)</b></span></label></div>
+
+      <h3 style="margin-top:8px">Cennik (PLN)</h3>
+      <div class="divider"><span>ZDALNE</span></div>
+      <div class="priceRow"><input class="price" id="priceR60" type="number" placeholder="np. 60" /><span class="label">— 60 min ZDALNE</span></div>
+      <div class="priceRow"><input class="price" id="priceR90" type="number" placeholder="np. 90" /><span class="label">— 90 min ZDALNE</span></div>
+      <div class="priceRow"><input class="price" id="priceR120" type="number" placeholder="np. 120" /><span class="label">— 120 min ZDALNE</span></div>
+
+      <div class="divider"><span>STACJONARNE</span></div>
+      <div class="priceRow"><input class="price" id="priceS60" type="number" placeholder="np. 70" /><span class="label">— 60 min STACJONARNE</span></div>
+      <div class="priceRow"><input class="price" id="priceS90" type="number" placeholder="np. 100" /><span class="label">— 90 min STACJONARNE</span></div>
+      <div class="priceRow"><input class="price" id="priceS120" type="number" placeholder="np. 140" /><span class="label">— 120 min STACJONARNE</span></div>
+
+      <h3 style="margin-top:8px">Aktywne zajęcia (domyślne)</h3>
+      <div class="row">
+        <select id="activeType">
+          <option value="remote">Zdalne</option>
+          <option value="station">Stacjonarne</option>
+        </select>
+        <select id="activeDur">
+          <option value="60">60 min</option>
+          <option value="90">90 min</option>
+          <option value="120">120 min</option>
+        </select>
+      </div>
+
+      <div class="footer">
+        <button class="btn ghost" id="cancelDialog">Anuluj</button>
+        <button class="btn primary" id="confirmDialog">Zapisz</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  const storeKey = 'tuttorly.v11';
+  const el = id => document.getElementById(id);
+
+  let state = load();
+  let currentId = null;
+  let currentView = 'list';
+
+  function uid(){ return Math.random().toString(36).slice(2,10); }
+  function formatPLN(n){ try{ return new Intl.NumberFormat('pl-PL',{style:'currency',currency:'PLN', maximumFractionDigits:0}).format(n);}catch{ return Math.round(n)+' zł'; } }
+  function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
+  function load(){ const raw = localStorage.getItem(storeKey); if(raw){ try{ const d=JSON.parse(raw); d.students?.forEach((s,i)=>{ if(typeof s.order!=="number") s.order=i; if(!s.pricing) s.pricing={}; }); return d; }catch{} }
+    return { students:[
+      {id:uid(), order:0, name:'Anna Nowak', place:'Zielona Góra', notes:'Matematyka, 7 klasa', balance:10, pricing:{remote60:60, remote90:90, remote120:120, station60:80, station90:110, station120:140}, active:{type:'remote', dur:60}},
+      {id:uid(), order:1, name:'Jan Kowalski', place:'Wrocław', notes:'Fizyka, matura', balance:-10, pricing:{remote60:70, remote90:100, remote120:120, station60:90, station90:130, station120:160}, active:{type:'station', dur:90}}
+    ]}; }
+
+  window.addEventListener('load', ()=>{ setTimeout(()=>{ const s = el('splash'); if(s) s.style.display='none'; el('phone').classList.add('show'); }, 1200); });
+
+  function setView(which){
+    const list = el('listView');
+    const detail = el('detailView');
+    const badge = el('viewBadge');
+    const fab = el('addBtn');
+    currentView = which;
+    if(which==='detail'){
+      list && (list.style.display='none');
+      detail && (detail.style.display='flex');
+      badge && (badge.textContent='Szczegóły');
+      fab && (fab.style.display='none');
+    } else {
+      list && (list.style.display='flex');
+      detail && (detail.style.display='none');
+      badge && (badge.textContent='Uczniowie');
+      fab && (fab.style.display='grid');
+    }
+  }
+
+  document.addEventListener('click', (e)=>{
+    const target = e.target.closest ? e.target.closest('#inlineBack') : null;
+    if(target) setView('list');
+  });
+
+  function renderList(){
+    const list = el('listView'); if(!list) return; list.innerHTML='';
+    if(!state.students.length){ list.innerHTML = `<div class="card" style="justify-content:center; text-align:center; padding:24px">Brak uczniów. Kliknij <b>+</b> aby dodać.</div>`; return; }
+    const sorted = state.students.slice().sort((a,b)=> (a.order??0)-(b.order??0));
+    sorted.forEach(s=>{
+      const card = document.createElement('div'); card.className='card'; card.dataset.id=s.id;
+      const initials=(s.name||'?').split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();
+      const avatar = s.avatar? `<img src="${s.avatar}" alt="">` : initials;
+      card.innerHTML = `
+        <div class="avatar">${avatar}</div>
+        <div class="meta"><div class="name">${escapeHtml(s.name)}</div><div class="sub">${escapeHtml(s.place||'—')}</div></div>
+        <div class="amount ${s.balance>0?'pos':(s.balance<0?'neg':'')}">${formatPLN(s.balance)}</div>`;
+      enableLongPressDnD(card, s.id);
+      list.appendChild(card);
+    });
+  }
+
+  let dragEl=null, placeholder=null, startX=0, startY=0, offsetY=0, lpTimer=null, dragStarted=false;
+  const LP_MS=450, SLOP=8;
+  function enableLongPressDnD(elm, id){
+    const list = el('listView');
+    elm.addEventListener('pointerdown', (e)=>{
+      if(e.button!==0) return;
+      dragStarted=false; startX=e.clientX; startY=e.clientY; offsetY=0;
+      lpTimer=setTimeout(()=>{ if(!dragStarted){ startDrag(elm,e); dragStarted=true; } }, LP_MS);
+      elm.setPointerCapture(e.pointerId);
+    });
+    elm.addEventListener('pointermove', (e)=>{
+      const dx=Math.abs(e.clientX-startX), dy=Math.abs(e.clientY-startY);
+      if(!dragStarted && (dx> SLOP || dy> SLOP)){ clearLP(); }
+      if(dragStarted && dragEl){ moveDrag(e); }
+    });
+    elm.addEventListener('pointerup', ()=>{
+      if(dragStarted){ endDrag(); }
+      else { clearLP(); selectStudent(id); }
+    });
+    elm.addEventListener('pointercancel', ()=>{ clearLP(); if(dragStarted) endDrag(); });
+
+    function clearLP(){ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } }
+    function startDrag(node, e){
+      dragEl=node; dragEl.classList.add('dragging');
+      const r=dragEl.getBoundingClientRect(); offsetY=e.clientY-r.top;
+      placeholder=document.createElement('div'); placeholder.className='placeholder'; placeholder.style.height=r.height+'px';
+      dragEl.parentNode.insertBefore(placeholder, dragEl.nextSibling);
+      dragEl.style.position='fixed'; dragEl.style.left=r.left+'px'; dragEl.style.width=r.width+'px'; dragEl.style.top=r.top+'px'; dragEl.style.zIndex=50;
+      document.body.appendChild(dragEl);
+      moveDrag(e);
+    }
+    function moveDrag(e){
+      dragEl.style.top=(e.clientY-offsetY)+'px';
+      const cards=Array.from(list.children).filter(x=>x!==placeholder && !x.classList.contains('dragging'));
+      const midY=e.clientY; let target=null;
+      for(const c of cards){ const r=c.getBoundingClientRect(); if(midY<r.top+r.height/2){ target=c; break; } }
+      if(target){ list.insertBefore(placeholder,target);} else { list.appendChild(placeholder);} }
+    function endDrag(){
+      if(!dragEl) return;
+      placeholder.parentNode.insertBefore(dragEl, placeholder);
+      dragEl.style.position=''; dragEl.style.left=''; dragEl.style.top=''; dragEl.style.width=''; dragEl.style.zIndex='';
+      dragEl.classList.remove('dragging'); placeholder.remove(); placeholder=null;
+      const ids=Array.from(el('listView').children).map(x=>x.dataset.id).filter(Boolean);
+      ids.forEach((sid,i)=>{ const s=state.students.find(o=>o.id===sid); if(s) s.order=i; });
+      save(); dragEl=null; renderList();
+    }
+  }
+
+  function escapeHtml(str){ return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function selectStudent(id){
+    currentId=id; const s=state.students.find(x=>x.id===id); if(!s) return;
+    setView('detail'); setReadOnly(true);
+    el('dName').value=s.name||''; el('dPlace').value=s.place||''; el('dNotes').value=s.notes||'';
+    renderAvatar(s); renderBalance(s.balance); updateMap(s.place); renderActiveSummary();
+  }
+
+  function renderAvatar(s){ const dA=el('dAvatar'); dA.innerHTML=''; if(s.avatar){ const img=document.createElement('img'); img.src=s.avatar; img.alt='avatar'; dA.appendChild(img);} else { dA.textContent=(s.name||'?').split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase(); } }
+  function renderBalance(val){ const b=el('dBalance'); b.textContent=formatPLN(val); b.classList.remove('pos','neg'); if(val>0)b.classList.add('pos'); if(val<0)b.classList.add('neg'); evaluateFree(); }
+  function setReadOnly(ro){ el('detailView').classList.toggle('readonly', !!ro); }
+  function updateMap(place){ const map=el('map'); const q=encodeURIComponent(place||'Polska'); map.src=`https://maps.google.com/maps?q=${q}&z=14&output=embed`; }
+
+  ['dName','dPlace','dNotes'].forEach(id=>{ el(id).addEventListener('input',()=>{ if(el('detailView').classList.contains('readonly')) return; const s=state.students.find(x=>x.id===currentId); if(!s) return; s.name=el('dName').value.trim(); s.place=el('dPlace').value.trim(); s.notes=el('dNotes').value.trim(); save(); renderList(); updateMap(s.place); renderAvatar(s); renderActiveSummary(); }); });
+
+  function getActivePrice(){ const s=state.students.find(x=>x.id===currentId); if(!s) return 0; const key=(s.active?.type==='station'?'station':'remote')+String(s.active?.dur||60); const v=s.pricing?.[key]??0; return Number(v)||0; }
+  function renderActiveSummary(){ const s=state.students.find(x=>x.id===currentId); if(!s) return; const typeLabel=(s.active?.type==='station')?'Stacjonarne':'Zdalne'; const dur=s.active?.dur||60; const price=getActivePrice(); const badge=el('activeBadge'); const priceBadge=el('priceBadge'); if(badge) badge.textContent=`Aktywne: ${typeLabel} — ${dur} min`; if(priceBadge) priceBadge.textContent=`Cena: ${price?formatPLN(price):'—'}`; evaluateFree(); }
+  function evaluateFree(){ const s=state.students.find(x=>x.id===currentId); if(!s) return; const p=getActivePrice(); const wrap=el('balanceWrap'); const badge=el('freeBadge'); const ok=p>0 && s.balance===p; if(wrap) wrap.classList.toggle('highlight', ok); if(badge) badge.style.display= ok? 'inline-block':'none'; }
+
+  function applyDelta(d){ const s=state.students.find(x=>x.id===currentId); if(!s) return; s.balance=Math.round(s.balance+d); save(); renderBalance(s.balance); renderList(); }
+  function resetBalance(){ const s=state.students.find(x=>x.id===currentId); if(!s) return; s.balance=0; save(); renderBalance(s.balance); renderList(); }
+
+  const dialog=el('dialogWrap');
+  function openDialog(editId){ if(!dialog) return; dialog.style.display='flex';
+    const title=el('dialogTitle'); const sName=el('sName'); const sPlace=el('sPlace'); const sNotes=el('sNotes');
+    const pR60=el('priceR60'); const pR90=el('priceR90'); const pR120=el('priceR120'); const pS60=el('priceS60'); const pS90=el('priceS90'); const pS120=el('priceS120');
+    const aInfo=el('avatarInfo'); const aType=el('activeType'); const aDur=el('activeDur');
+
+    if(editId){ const s=state.students.find(x=>x.id===editId); if(!s) return;
+      title && (title.textContent='Edytuj ucznia'); sName && (sName.value=s.name||''); sPlace && (sPlace.value=s.place||''); sNotes && (sNotes.value=s.notes||'');
+      pR60 && (pR60.value=s.pricing?.remote60??''); pR90 && (pR90.value=s.pricing?.remote90??''); pR120 && (pR120.value=s.pricing?.remote120??'');
+      pS60 && (pS60.value=s.pricing?.station60??''); pS90 && (pS90.value=s.pricing?.station90??''); pS120 && (pS120.value=s.pricing?.station120??'');
+      aInfo && (aInfo.textContent=s.avatar?'ustawiono':'(opcjonalnie)');
+      aType && (aType.value=s.active?.type||'remote'); aDur && (aDur.value=String(s.active?.dur||60)); dialog.dataset.editId=editId;
+    } else {
+      title && (title.textContent='Nowy uczeń'); sName && (sName.value=''); sPlace && (sPlace.value=''); sNotes && (sNotes.value='');
+      pR60 && (pR60.value=''); pR90 && (pR90.value=''); pR120 && (pR120.value=''); pS60 && (pS60.value=''); pS90 && (pS90.value=''); pS120 && (pS120.value='');
+      aInfo && (aInfo.textContent='(opcjonalnie)'); aType && (aType.value='remote'); aDur && (aDur.value='60'); delete dialog.dataset.editId;
+    }
+    setTimeout(()=>sName&&sName.focus(),50);
+  }
+  function closeDialog(){ dialog && (dialog.style.display='none'); }
+  el('addBtn')?.addEventListener('click',()=>{ if(currentView!=='list') return; openDialog(); });
+  el('editBtn')?.addEventListener('click',()=>{ if(currentId){ openDialog(currentId); setReadOnly(false);} });
+  el('cancelDialog')?.addEventListener('click',closeDialog);
+  el('sAvatar')?.addEventListener('change', (e)=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ const info=el('avatarInfo'); if(info){ info.textContent='wybrano'; info.dataset.dataurl=r.result; } }; r.readAsDataURL(f); });
+
+  el('confirmDialog')?.addEventListener('click',()=>{
+    const name=el('sName')?.value.trim(); if(!name){ alert('Podaj imię i nazwisko'); return; }
+    const place=el('sPlace')?.value.trim(); const notes=el('sNotes')?.value.trim();
+    const pricing={ remote60:numOrNull(el('priceR60')?.value), remote90:numOrNull(el('priceR90')?.value), remote120:numOrNull(el('priceR120')?.value), station60:numOrNull(el('priceS60')?.value), station90:numOrNull(el('priceS90')?.value), station120:numOrNull(el('priceS120')?.value)};
+    const avatar=el('avatarInfo')?.dataset.dataurl; const active={ type:el('activeType')?.value, dur:Number(el('activeDur')?.value) };
+
+    if(dialog?.dataset.editId){
+      const s=state.students.find(x=>x.id===dialog.dataset.editId); if(!s) return; s.name=name; s.place=place; s.notes=notes; s.pricing={...(s.pricing||{}),...pricing}; s.active=active; if(avatar) s.avatar=avatar; save(); if(currentId===s.id){ selectStudent(s.id);} }
+    else { const order=(state.students.reduce((m,x)=>Math.max(m,x.order??-1),-1)+1); state.students.push({id:uid(), order, name, place, notes, balance:0, pricing, avatar, active}); save(); }
+    closeDialog(); renderList();
+  });
+  function numOrNull(v){ const n=Number(v); return isNaN(n)? null:n; }
+
+  el('plus10')?.addEventListener('click',()=>applyDelta(10));
+  el('minus10')?.addEventListener('click',()=>applyDelta(-10));
+  el('resetBtn')?.addEventListener('click',resetBalance);
+  el('addPlus')?.addEventListener('click',()=>{ const v=Number(el('customAmount')?.value); if(!v) return; applyDelta(Math.abs(v)); el('customAmount') && (el('customAmount').value=''); });
+  el('addMinus')?.addEventListener('click',()=>{ const v=Number(el('customAmount')?.value); if(!v) return; applyDelta(-Math.abs(v)); el('customAmount') && (el('customAmount').value=''); });
+
+  el('exportBtn')?.addEventListener('click',()=>{ const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='tuttorly-data.json'; a.click(); URL.revokeObjectURL(url); });
+  el('importFile')?.addEventListener('change',(e)=>{ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ try{ const data=JSON.parse(reader.result); if(!data||!Array.isArray(data.students)) throw new Error('Zły format pliku'); data.students.forEach((s,i)=>{ if(typeof s.order!=="number") s.order=i; }); state=data; save(); renderList(); setView('list'); currentId=null; alert('Zaimportowano dane.'); }catch(err){ alert('Błąd importu: '+err.message);} }; reader.readAsText(file); e.target.value=''; });
+
+  renderList();
+  setView('list');
+  updateMap('Polska');
+  </script>
+</body>
+</html>
