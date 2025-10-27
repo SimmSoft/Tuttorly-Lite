@@ -284,7 +284,10 @@
           <input id="customAmount" type="number" placeholder="Custom" />
         </div>
 
-        <div class="map-wrap"><iframe class="map" id="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>
+        <div class="row" style="margin-top: 12px;">
+          <button class="btn" id="toggleMapBtn" style="width:100%">Pokaż mapę</button>
+        </div>
+        <div class="map-wrap" style="display: none;"><iframe class="map" id="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>
       </div>
 
       <div class="copyright">© SimmSoft 2025</div>
@@ -498,6 +501,11 @@
     el('dName').value=s.name||''; el('dPlace').value=s.place||''; el('dNotes').value=s.notes||'';
     renderAvatar(s); renderBalance(s.balance); updateMap(s.place); renderActiveSummary();
     safePush('#detail-'+id, {screen:'detail', id}); // no-op in sandbox
+
+    const mapWrap = el('map').parentNode;
+    if (mapWrap) mapWrap.style.display = 'none';
+    const toggleBtn = el('toggleMapBtn');
+    if (toggleBtn) toggleBtn.textContent = 'Pokaż mapę';
   }
 
   function renderAvatar(s){ const dA=el('dAvatar'); dA.innerHTML=''; if(s.avatar){ const img=document.createElement('img'); img.src=s.avatar; img.alt='avatar'; dA.appendChild(img);} else { dA.textContent=(s.name||'?').split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase(); } }
@@ -592,6 +600,13 @@
 
   el('exportBtn')?.addEventListener('click',()=>{ const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='tuttorly-data.json'; a.click(); URL.revokeObjectURL(url); });
   el('importFile')?.addEventListener('change',(e)=>{ const file=e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ try{ const data=JSON.parse(reader.result); if(!data||!Array.isArray(data.students)) throw new Error('Zły format pliku'); data.students.forEach((s,i)=>{ if(typeof s.order!=="number") s.order=i; }); state=data; save(); renderList(); setView('list'); currentId=null; alert('Zaimportowano dane.'); }catch(err){ alert('Błąd importu: '+err.message);} }; reader.readAsText(file); e.target.value=''; });
+
+  el('toggleMapBtn')?.addEventListener('click', () => {
+    const mapWrap = el('map').parentNode;
+    const isHidden = mapWrap.style.display === 'none';
+    mapWrap.style.display = isHidden ? 'block' : 'none';
+    el('toggleMapBtn').textContent = isHidden ? 'Ukryj mapę' : 'Pokaż mapę';
+  });
 
   renderList();
   setView('list');
