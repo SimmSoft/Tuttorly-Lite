@@ -96,9 +96,13 @@
 
     /* LIST */
     .list{display:flex; flex-direction:column; gap:10px; overflow:auto; padding-right:4px}
-    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:12px; display:flex; gap:12px; align-items:center; cursor:grab; transition:transform .05s ease, background .15s}
+    .card{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:12px; display:flex; gap:12px; align-items:center; cursor:pointer; transition:transform .05s ease, background .15s}
     .card:hover{background:#1a1e27}
     .card:active{transform:scale(.995)}
+    .drag-handle{display:flex; align-items:center; padding:0 8px 0 4px; cursor:grab; color:var(--muted)}
+    .drag-handle svg{width:24px; height:24px; pointer-events:none}
+    .card.dragging {cursor:grabbing}
+    .card.dragging .drag-handle{cursor:grabbing}
     .card.dragging{opacity:.85; box-shadow:0 12px 28px rgba(0,0,0,.4);}
     .placeholder{border:2px dashed rgba(255,255,255,.15); border-radius:16px; height:68px; margin:4px 0}
     .avatar{width:44px; height:44px; border-radius:14px; background:linear-gradient(145deg,#1f2430,#111319); display:grid; place-items:center; color:var(--muted); font-weight:700; overflow:hidden}
@@ -436,60 +440,107 @@
       const card = document.createElement('div'); card.className='card'; card.dataset.id=s.id;
       const initials=(s.name||'?').split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();
       const avatar = s.avatar? `<img src="${s.avatar}" alt="">` : initials;
+      const handleSvg = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>`;
       card.innerHTML = `
+        <div class="drag-handle" title="Zmień kolejność">${handleSvg}</div>
         <div class="avatar">${avatar}</div>
         <div class="meta"><div class="name">${escapeHtml(s.name)}</div><div class="sub">${escapeHtml(s.place||'—')}</div></div>
         <div class="amount ${s.balance>0?'pos':(s.balance<0?'neg':'')}">${formatPLN(s.balance)}</div>`;
-      enableLongPressDnD(card, s.id);
+      enableCardDnD(card, s.id);
       list.appendChild(card);
     });
   }
 
   let dragEl=null, placeholder=null, startX=0, startY=0, offsetY=0, lpTimer=null, dragStarted=false;
   const LP_MS=450, SLOP=8;
-  function enableLongPressDnD(elm, id){
+  function enableCardDnD(card, id) {
+    const handle = card.querySelector('.drag-handle');
     const list = el('listView');
-    elm.addEventListener('pointerdown', (e)=>{
-      if(e.button!==0) return;
-      dragStarted=false; startX=e.clientX; startY=e.clientY; offsetY=0;
-      lpTimer=setTimeout(()=>{ if(!dragStarted){ startDrag(elm,e); dragStarted=true; } }, LP_MS);
-      elm.setPointerCapture(e.pointerId);
-    });
-    elm.addEventListener('pointermove', (e)=>{
-      const dx=Math.abs(e.clientX-startX), dy=Math.abs(e.clientY-startY);
-      if(!dragStarted && (dx> SLOP || dy> SLOP)){ clearLP(); }
-      if(dragStarted && dragEl){ moveDrag(e); }
-    });
-    elm.addEventListener('pointerup', ()=>{
-      if(dragStarted){ endDrag(); }
-      else { clearLP(); selectStudent(id); }
-    });
-    elm.addEventListener('pointercancel', ()=>{ clearLP(); if(dragStarted) endDrag(); });
+    let dragEl = null, placeholder = null, offsetY = 0;
 
-    function clearLP(){ if(lpTimer){ clearTimeout(lpTimer); lpTimer=null; } }
-    function startDrag(node, e){
-      dragEl=node; dragEl.classList.add('dragging');
-      const r=dragEl.getBoundingClientRect(); offsetY=e.clientY-r.top;
-      placeholder=document.createElement('div'); placeholder.className='placeholder'; placeholder.style.height=r.height+'px';
-      dragEl.parentNode.insertBefore(placeholder, dragEl.nextSibling);
-      dragEl.style.position='fixed'; dragEl.style.left=r.left+'px'; dragEl.style.width=r.width+'px'; dragEl.style.top=r.top+'px'; dragEl.style.zIndex=50;
-      document.body.appendChild(dragEl);
-      moveDrag(e);
+    // Click on card to select
+    card.addEventListener('click', (e) => {
+        if (e.target.closest('.drag-handle')) return;
+        selectStudent(id);
+    });
+
+    // Drag from handle
+    handle.addEventListener('pointerdown', e => {
+        if (e.button !== 0) return;
+        e.stopPropagation();
+        startDrag(card, e);
+        handle.setPointerCapture(e.pointerId);
+    });
+
+    handle.addEventListener('pointermove', e => {
+        if (dragEl) moveDrag(e);
+    });
+
+    const endDragHandler = () => {
+        if (dragEl) endDrag();
+    };
+    handle.addEventListener('pointerup', endDragHandler);
+    handle.addEventListener('pointercancel', endDragHandler);
+
+    // --- DnD Helper Functions (Copied from original) ---
+    function startDrag(node, e) {
+        dragEl = node;
+        dragEl.classList.add('dragging');
+        const r = dragEl.getBoundingClientRect();
+        offsetY = e.clientY - r.top;
+        placeholder = document.createElement('div');
+        placeholder.className = 'placeholder';
+        placeholder.style.height = r.height + 'px';
+        dragEl.parentNode.insertBefore(placeholder, dragEl.nextSibling);
+        dragEl.style.position = 'fixed';
+        dragEl.style.left = r.left + 'px';
+        dragEl.style.width = r.width + 'px';
+        dragEl.style.top = r.top + 'px';
+        dragEl.style.zIndex = 50;
+        document.body.appendChild(dragEl);
+        moveDrag(e);
     }
-    function moveDrag(e){
-      dragEl.style.top=(e.clientY-offsetY)+'px';
-      const cards=Array.from(list.children).filter(x=>x!==placeholder && !x.classList.contains('dragging'));
-      const midY=e.clientY; let target=null;
-      for(const c of cards){ const r=c.getBoundingClientRect(); if(midY<r.top+r.height/2){ target=c; break; } }
-      if(target){ list.insertBefore(placeholder,target);} else { list.appendChild(placeholder);} }
-    function endDrag(){
-      if(!dragEl) return;
-      placeholder.parentNode.insertBefore(dragEl, placeholder);
-      dragEl.style.position=''; dragEl.style.left=''; dragEl.style.top=''; dragEl.style.width=''; dragEl.style.zIndex='';
-      dragEl.classList.remove('dragging'); placeholder.remove(); placeholder=null;
-      const ids=Array.from(el('listView').children).map(x=>x.dataset.id).filter(Boolean);
-      ids.forEach((sid,i)=>{ const s=state.students.find(o=>o.id===sid); if(s) s.order=i; });
-      save(); dragEl=null; renderList();
+
+    function moveDrag(e) {
+        if (!dragEl) return;
+        dragEl.style.top = (e.clientY - offsetY) + 'px';
+        const cards = Array.from(list.children).filter(x => x !== placeholder && !x.classList.contains('dragging'));
+        const midY = e.clientY;
+        let target = null;
+        for (const c of cards) {
+            const r = c.getBoundingClientRect();
+            if (midY < r.top + r.height / 2) {
+                target = c;
+                break;
+            }
+        }
+        if (target) {
+            list.insertBefore(placeholder, target);
+        } else {
+            list.appendChild(placeholder);
+        }
+    }
+
+    function endDrag() {
+        if (!dragEl) return;
+        placeholder.parentNode.insertBefore(dragEl, placeholder);
+        dragEl.style.position = '';
+        dragEl.style.left = '';
+        dragEl.style.top = '';
+        dragEl.style.width = '';
+        dragEl.style.zIndex = '';
+        dragEl.classList.remove('dragging');
+        placeholder.remove();
+        
+        const ids = Array.from(el('listView').children).map(x => x.dataset.id).filter(Boolean);
+        ids.forEach((sid, i) => {
+            const s = state.students.find(o => o.id === sid);
+            if (s) s.order = i;
+        });
+        save();
+        dragEl = null;
+        placeholder = null;
+        renderList();
     }
   }
 
