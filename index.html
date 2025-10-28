@@ -96,12 +96,12 @@
     .tab.active{background:linear-gradient(180deg,rgba(139,92,246,.17),rgba(110,231,255,.12)); color:var(--text)}
 
     /* VIEWS */
-    .view{display:none !important; flex-direction:column; gap:10px; flex:1; overflow:hidden; animation:fadeIn .3s ease}
+    .view{display:none !important; flex-direction:column; gap:10px; flex:1; overflow:auto; animation:fadeIn .3s ease}
     .view.active{display:flex !important}
     @keyframes fadeIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
 
     /* LIST */
-    .list{display:flex; flex-direction:column; gap:10px; overflow:auto; padding-right:4px; padding-bottom:70px}
+    .list{display:flex; flex-direction:column; gap:10px; overflow:visible; padding-right:4px; padding-bottom:70px}
     .card{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:12px; display:flex; gap:12px; align-items:center; cursor:pointer; transition:transform .05s ease, background .15s}
     .card:hover{background:#1a1e27}
     .card:active{transform:scale(.995)}
@@ -204,6 +204,32 @@
     .incomeTypeBtn:hover{background:#1f2430}
     .incomeTypeBtn.active{background:linear-gradient(145deg,#1a2847,#0f1626); border:none; color:var(--text); font-weight:700}
 
+    /* STATS VIEW */
+    .monthSelector{display:flex; align-items:center; justify-content:center; gap:16px; padding:12px 0; margin-bottom:12px}
+    .monthNav{width:36px; height:36px; border-radius:10px; border:1px solid var(--border); background:#151821; color:var(--text); cursor:pointer; display:grid; place-items:center; transition:background .15s ease}
+    .monthNav:hover{background:#1a1e27}
+    .monthNav:active{transform:scale(.95)}
+    .monthNav svg{width:18px; height:18px; fill:currentColor}
+    .monthDisplay{font-weight:700; font-size:14px; color:var(--text); min-width:100px; text-align:center; letter-spacing:.3px}
+
+    /* Summary Grid */
+    .summaryGrid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px}
+    .summaryCard{background:linear-gradient(135deg,rgba(139,92,246,.15),rgba(110,231,255,.1)); border:1px solid var(--border); border-radius:14px; padding:14px 12px; text-align:center}
+    .summaryCard:first-child{grid-column:1 / -1; width:100%}
+    .summaryLabel{font-size:12px; color:var(--muted); font-weight:500; margin-bottom:6px; letter-spacing:.3px}
+    .summaryAmount{font-weight:800; font-size:16px; color:var(--accent); letter-spacing:-.4px}
+    .statBar{height:3px; background:var(--border); border-radius:2px; margin-top:8px; overflow:hidden}
+    .statBarFill{height:100%; background:linear-gradient(90deg, var(--accent-2), var(--accent)); border-radius:2px; transition:width .3s ease}
+    
+    /* Chart Placeholder */
+    .chartSection{background:#0a0d13; border:1px solid var(--border); border-radius:14px; padding:20px 12px; text-align:center; color:var(--muted); font-size:12px; margin-bottom:16px; min-height:160px; display:flex; align-items:center; justify-content:center}
+    
+    /* Separator */
+    .statsSection{margin-top:4px}
+    .statsHeader{display:flex; align-items:center; gap:10px; margin:6px 0; color:var(--text); font-weight:700; font-size:13px; letter-spacing:.2px; white-space:nowrap}
+    .statsHeader::before, .statsHeader::after{content:''; height:1px; background:var(--border); flex:1}
+    .statsHeader span{flex:0}
+
     @media (max-width:440px){ .phone{width:100%; height:calc(100vh - 48px)} }
     
     /* --- Display-Mode (installed PWA) --- */
@@ -268,6 +294,46 @@
 
       <!-- STATS VIEW -->
       <div class="view" id="statsView">
+        <!-- Month Selector -->
+        <div class="monthSelector">
+          <button class="monthNav" id="prevMonth" title="Poprzedni miesiąc">
+            <svg viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+          </button>
+          <div class="monthDisplay" id="monthDisplay">październik 2025</div>
+          <button class="monthNav" id="nextMonth" title="Następny miesiąc">
+            <svg viewBox="0 0 24 24"><path d="M10 6 8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+          </button>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summaryGrid">
+          <div class="summaryCard">
+            <div class="summaryLabel">Razem</div>
+            <div class="summaryAmount" id="totalAmount">0 zł</div>
+          </div>
+          <div class="summaryCard">
+            <div class="summaryLabel">🌐 Online</div>
+            <div class="summaryAmount" id="onlineAmount">0 zł</div>
+            <div class="statBar"><div class="statBarFill" id="onlineBar"></div></div>
+          </div>
+          <div class="summaryCard">
+            <div class="summaryLabel">💵 Gotówka</div>
+            <div class="summaryAmount" id="cashAmount">0 zł</div>
+            <div class="statBar"><div class="statBarFill" id="cashBar"></div></div>
+          </div>
+        </div>
+
+        <!-- Chart Placeholder -->
+        <div class="chartSection">TUTAJ wizualne pokazanie jak wygląda zarobek na poprzednie miesiące w tym dzisiejszy miesiąc.</div>
+
+        <!-- Separator with header -->
+        <div class="statsSection">
+          <div class="statsHeader">
+            <span>Historia wpłat</span>
+          </div>
+        </div>
+
+        <!-- Earnings List -->
         <div class="list" id="earningsList"></div>
       </div>
 
@@ -474,6 +540,7 @@
     const fab = el('addBtn');
     if(tabName === 'stats'){
       if(fab) fab.classList.add('dark');
+      renderStats();
       renderEarnings();
     } else {
       if(fab) fab.classList.remove('dark');
@@ -690,6 +757,35 @@
     if(currentView==='students'){ openDialog(); } 
     else if(currentView==='stats'){ openIncomeDialog(); }
   });
+
+  // Month navigation for stats
+  el('prevMonth')?.addEventListener('click', ()=>{
+    const monthDisplay = el('monthDisplay');
+    if(!monthDisplay) return;
+    const monthStr = monthDisplay.textContent;
+    const [monthName, yearStr] = monthStr.split(' ');
+    const monthMap = {'styczeń':1, 'luty':2, 'marzec':3, 'kwiecień':4, 'maj':5, 'czerwiec':6, 'lipiec':7, 'sierpień':8, 'wrzesień':9, 'październik':10, 'listopad':11, 'grudzień':12};
+    const monthInv = {1:'styczeń', 2:'luty', 3:'marzec', 4:'kwiecień', 5:'maj', 6:'czerwiec', 7:'lipiec', 8:'sierpień', 9:'wrzesień', 10:'październik', 11:'listopad', 12:'grudzień'};
+    let month = monthMap[monthName.toLowerCase()] || 10;
+    let year = parseInt(yearStr) || 2025;
+    month--; if(month < 1){ month = 12; year--; }
+    monthDisplay.textContent = monthInv[month] + ' ' + year;
+    renderStats(); renderEarnings();
+  });
+
+  el('nextMonth')?.addEventListener('click', ()=>{
+    const monthDisplay = el('monthDisplay');
+    if(!monthDisplay) return;
+    const monthStr = monthDisplay.textContent;
+    const [monthName, yearStr] = monthStr.split(' ');
+    const monthMap = {'styczeń':1, 'luty':2, 'marzec':3, 'kwiecień':4, 'maj':5, 'czerwiec':6, 'lipiec':7, 'sierpień':8, 'wrzesień':9, 'październik':10, 'listopad':11, 'grudzień':12};
+    const monthInv = {1:'styczeń', 2:'luty', 3:'marzec', 4:'kwiecień', 5:'maj', 6:'czerwiec', 7:'lipiec', 8:'sierpień', 9:'wrzesień', 10:'październik', 11:'listopad', 12:'grudzień'};
+    let month = monthMap[monthName.toLowerCase()] || 10;
+    let year = parseInt(yearStr) || 2025;
+    month++; if(month > 12){ month = 1; year++; }
+    monthDisplay.textContent = monthInv[month] + ' ' + year;
+    renderStats(); renderEarnings();
+  });
   el('editBtn')?.addEventListener('click',()=>{ if(currentId){ openDialog(currentId); setReadOnly(false);} });
   el('cancelDialog')?.addEventListener('click',()=>{ closeDialog(); });
   el('deleteBtn')?.addEventListener('click',()=>{
@@ -793,6 +889,35 @@
     setTimeout(() => amount && amount.focus(), 50);
   }
 
+  function renderStats(){
+    const monthStr = el('monthDisplay')?.textContent || '';
+    const [monthName, yearStr] = monthStr.split(' ');
+    const monthMap = {'styczeń':1, 'luty':2, 'marzec':3, 'kwiecień':4, 'maj':5, 'czerwiec':6, 'lipiec':7, 'sierpień':8, 'wrzesień':9, 'październik':10, 'listopad':11, 'grudzień':12};
+    const month = monthMap[monthName.toLowerCase()] || 10;
+    const year = parseInt(yearStr) || 2025;
+    
+    let total = 0, online = 0, cash = 0;
+    
+    (state.earnings || []).forEach(entry => {
+      const d = new Date(entry.date + 'T00:00:00');
+      if(d.getMonth() + 1 === month && d.getFullYear() === year){
+        total += entry.amount;
+        if(entry.type === 'cash') cash += entry.amount;
+        else online += entry.amount;
+      }
+    });
+    
+    el('totalAmount').textContent = formatPLN(total);
+    el('onlineAmount').textContent = formatPLN(online);
+    el('cashAmount').textContent = formatPLN(cash);
+    
+    // Update stat bars
+    const onlineBar = el('onlineBar');
+    const cashBar = el('cashBar');
+    if(onlineBar) onlineBar.style.width = total > 0 ? (online / total * 100) + '%' : '0%';
+    if(cashBar) cashBar.style.width = total > 0 ? (cash / total * 100) + '%' : '0%';
+  }
+
   function renderEarnings(){
     const list = el('earningsList');
     if(!list) return;
@@ -803,6 +928,7 @@
       return;
     }
 
+    // Display all earnings sorted by date (without month filtering)
     const sorted = state.earnings.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
     sorted.forEach(entry => {
       const card = document.createElement('div');
@@ -874,6 +1000,7 @@
 
     save();
     closeIncomeDialog();
+    renderStats();
     renderEarnings();
   });
 
