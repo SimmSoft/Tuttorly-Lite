@@ -203,6 +203,25 @@
     .incomeTypeBtn{flex:1; height:48px; border-radius:14px; border:1px solid var(--border); background:#1a1e27; color:var(--muted); cursor:pointer; transition:all .15s ease; font-weight:600; font-size:14px}
     .incomeTypeBtn:hover{background:#1f2430}
     .incomeTypeBtn.active{background:linear-gradient(145deg,#1a2847,#0f1626); border:none; color:var(--text); font-weight:700}
+    
+    /* Month Selector */
+    .monthBtn{padding:12px 8px; border-radius:10px; border:1px solid var(--border); background:#1a1e27; color:var(--text); cursor:pointer; transition:all .15s ease; font-size:12px; font-weight:600; text-align:center}
+    .monthBtn:hover{background:#1f2430}
+    .monthBtn.active{background:linear-gradient(145deg,#1a2847,#0f1626); color:var(--accent); border-color:var(--accent)}
+    .monthBtn.current{border-color:var(--accent-2); color:var(--accent-2)}
+
+    /* Year Selector */
+    .monthSelectorHeader{display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--border)}
+    .yearDisplay{font-weight:700; cursor:pointer; padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:#1a1e27; transition:all .15s ease; user-select:none}
+    .yearDisplay:hover{background:#1f2430}
+    .yearSelectorWrap{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.5); z-index:40}
+    .yearDropdown{width:120px; max-width:92vw; background:#0f1218; border:1px solid var(--border); border-radius:12px; padding:0; box-shadow:var(--shadow); max-height:60vh; overflow:auto; display:flex; flex-direction:column}
+    .yearOption{padding:12px 16px; cursor:pointer; transition:background .15s ease; border:none; background:transparent; color:var(--text); text-align:left; font-weight:600}
+    .yearOption:hover{background:#1a1e27}
+    .yearOption.active{background:linear-gradient(145deg,#1a2847,#0f1626); color:var(--accent)}
+
+    .goTodayBtn{width:100%; padding:10px 12px; background:#1a1e27; border:1px solid var(--border); color:var(--text); border-radius:10px; cursor:pointer; transition:all .15s ease; font-weight:600; font-size:13px}
+    .goTodayBtn:hover{background:#1f2430}
 
     /* STATS VIEW */
     .monthSelector{display:flex; align-items:center; justify-content:center; gap:16px; padding:12px 0; margin-bottom:12px}
@@ -210,7 +229,8 @@
     .monthNav:hover{background:#1a1e27}
     .monthNav:active{transform:scale(.95)}
     .monthNav svg{width:18px; height:18px; fill:currentColor}
-    .monthDisplay{font-weight:700; font-size:14px; color:var(--text); min-width:100px; text-align:center; letter-spacing:.3px}
+    .monthDisplay{font-weight:700; font-size:14px; color:var(--text); min-width:100px; text-align:center; letter-spacing:.3px; cursor:pointer; padding:6px 10px; border-radius:10px; transition:background .15s ease; user-select:none}
+    .monthDisplay:hover{background:rgba(255,255,255,0.06)}
 
     /* Summary Grid */
     .summaryGrid{display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:16px}
@@ -221,8 +241,9 @@
     .statBar{height:3px; background:var(--border); border-radius:2px; margin-top:8px; overflow:hidden}
     .statBarFill{height:100%; background:linear-gradient(90deg, var(--accent-2), var(--accent)); border-radius:2px; transition:width .3s ease}
     
-    /* Chart Placeholder */
-    .chartSection{background:#0a0d13; border:1px solid var(--border); border-radius:14px; padding:20px 12px; text-align:center; color:var(--muted); font-size:12px; margin-bottom:16px; min-height:160px; display:flex; align-items:center; justify-content:center}
+    /* Chart */
+    .chartWrapper{background:#0a0d13; border:1px solid var(--border); border-radius:14px; padding:20px 12px; margin-bottom:16px; min-height:160px; display:flex; align-items:center; justify-content:center}
+    .chartWrapper canvas{width:100% !important; height:auto !important; max-height:180px}
     
     /* Separator */
     .statsSection{margin-top:4px}
@@ -312,7 +333,7 @@
             <div class="summaryAmount" id="totalAmount">0 zł</div>
           </div>
           <div class="summaryCard">
-            <div class="summaryLabel">🌐 Online</div>
+            <div class="summaryLabel">🌐 Karta</div>
             <div class="summaryAmount" id="onlineAmount">0 zł</div>
             <div class="statBar"><div class="statBarFill" id="onlineBar"></div></div>
           </div>
@@ -323,8 +344,15 @@
           </div>
         </div>
 
-        <!-- Chart Placeholder -->
-        <div class="chartSection">TUTAJ wizualne pokazanie jak wygląda zarobek na poprzednie miesiące w tym dzisiejszy miesiąc.</div>
+        <!-- Earnings Chart -->
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; padding:0 12px">
+          <button class="btn ghost" onclick="prevChartYear()" style="padding:2px 8px; font-size:11px; border:1px solid rgba(255,255,255,0.2)">◄</button>
+          <div style="font-size:12px; font-weight:600; color:var(--text-secondary); flex:1; text-align:center; min-width:50px" id="chartYearDisplay">2025</div>
+          <button class="btn ghost" onclick="nextChartYear()" style="padding:2px 8px; font-size:11px; border:1px solid rgba(255,255,255,0.2)">►</button>
+        </div>
+        <div class="chartWrapper">
+          <canvas id="earningsChart"></canvas>
+        </div>
 
         <!-- Separator with header -->
         <div class="statsSection">
@@ -485,6 +513,25 @@
         </div>
       </div>
     </div>
+  </div>
+
+  <!-- MONTH SELECTOR MODAL -->
+  <div class="dialog-wrap" id="monthSelectorWrap" style="display:none">
+    <div class="dialog" style="padding:0; max-width:320px; display:flex; flex-direction:column">
+      <div class="monthSelectorHeader">
+        <div style="font-weight:700">Wybierz miesiąc</div>
+        <div class="yearDisplay" id="yearDisplay" onclick="openYearSelector()">2025</div>
+      </div>
+      <div id="monthGrid" style="padding:12px; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-height:300px; overflow:auto; flex:1"></div>
+      <div style="padding:12px; border-top:1px solid var(--border)">
+        <button class="goTodayBtn" onclick="goToToday()">📅 Kliknij tutaj aby powrócić do dzisiaj</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- YEAR SELECTOR MODAL -->
+  <div class="yearSelectorWrap" id="yearSelectorWrap">
+    <div class="yearDropdown" id="yearDropdown"></div>
   </div>
 
   <!-- INSTALL BAR -->
@@ -786,6 +833,124 @@
     monthDisplay.textContent = monthInv[month] + ' ' + year;
     renderStats(); renderEarnings();
   });
+
+  // Month selector modal
+  let selectedYearInModal = new Date().getFullYear();
+  
+  el('monthDisplay')?.addEventListener('click', openMonthSelector);
+  el('monthSelectorWrap')?.addEventListener('click', (e) => {
+    if(e.target === el('monthSelectorWrap')) closeMonthSelector();
+  });
+  el('yearSelectorWrap')?.addEventListener('click', (e) => {
+    if(e.target === el('yearSelectorWrap')) closeYearSelector();
+  });
+
+  function openMonthSelector(){
+    const monthDisplay = el('monthDisplay');
+    const monthStr = monthDisplay.textContent;
+    const [monthName, yearStr] = monthStr.split(' ');
+    const monthMap = {'styczeń':1, 'luty':2, 'marzec':3, 'kwiecień':4, 'maj':5, 'czerwiec':6, 'lipiec':7, 'sierpień':8, 'wrzesień':9, 'październik':10, 'listopad':11, 'grudzień':12};
+    const monthInv = {1:'styczeń', 2:'luty', 3:'marzec', 4:'kwiecień', 5:'maj', 6:'czerwiec', 7:'lipiec', 8:'sierpień', 9:'wrzesień', 10:'październik', 11:'listopad', 12:'grudzień'};
+    const currentMonth = monthMap[monthName.toLowerCase()] || 10;
+    const year = parseInt(yearStr) || 2025;
+    
+    selectedYearInModal = year;
+    el('yearDisplay').textContent = year;
+    
+    // Reset chart year to current
+    chartYear = new Date().getFullYear();
+    el('chartYearDisplay').textContent = chartYear;
+    
+    renderMonthGrid(year, currentMonth);
+    el('monthSelectorWrap').style.display = 'flex';
+  }
+
+  function renderMonthGrid(year, currentMonth){
+    const monthInv = {1:'styczeń', 2:'luty', 3:'marzec', 4:'kwiecień', 5:'maj', 6:'czerwiec', 7:'lipiec', 8:'sierpień', 9:'wrzesień', 10:'październik', 11:'listopad', 12:'grudzień'};
+    const grid = el('monthGrid');
+    grid.innerHTML = '';
+    
+    const today = new Date();
+    const todayMonth = today.getMonth() + 1;
+    const todayYear = today.getFullYear();
+    
+    for(let m = 1; m <= 12; m++){
+      const monthNameStr = monthInv[m];
+      let totalEarnings = 0;
+      
+      (state.earnings || []).forEach(entry => {
+        const d = new Date(entry.date + 'T00:00:00');
+        if(d.getMonth() + 1 === m && d.getFullYear() === year){
+          totalEarnings += entry.amount;
+        }
+      });
+      
+      const btn = document.createElement('button');
+      btn.className = 'monthBtn';
+      if(m === currentMonth) btn.classList.add('active');
+      if(m === todayMonth && year === todayYear) btn.classList.add('current');
+      btn.innerHTML = `<div style="font-weight:700">${monthNameStr}</div><div style="font-size:11px; opacity:0.8">${formatPLN(totalEarnings)}</div>`;
+      btn.addEventListener('click', () => selectMonth(m, year, currentMonth));
+      grid.appendChild(btn);
+    }
+  }
+
+  function closeMonthSelector(){
+    el('monthSelectorWrap').style.display = 'none';
+  }
+
+  function openYearSelector(){
+    const today = new Date();
+    const currentYear = today.getFullYear();
+    const dropdown = el('yearDropdown');
+    dropdown.innerHTML = '';
+    
+    // Generate years from currentYear - 5 to currentYear + 5
+    for(let y = currentYear - 5; y <= currentYear + 5; y++){
+      const option = document.createElement('button');
+      option.className = 'yearOption';
+      if(y === selectedYearInModal) option.classList.add('active');
+      option.textContent = y;
+      option.addEventListener('click', () => selectYear(y));
+      dropdown.appendChild(option);
+    }
+    
+    el('yearSelectorWrap').style.display = 'flex';
+  }
+
+  function closeYearSelector(){
+    el('yearSelectorWrap').style.display = 'none';
+  }
+
+  function selectYear(year){
+    selectedYearInModal = year;
+    el('yearDisplay').textContent = year;
+    const monthDisplay = el('monthDisplay');
+    const monthStr = monthDisplay.textContent;
+    const [monthName] = monthStr.split(' ');
+    const monthMap = {'styczeń':1, 'luty':2, 'marzec':3, 'kwiecień':4, 'maj':5, 'czerwiec':6, 'lipiec':7, 'sierpień':8, 'wrzesień':9, 'październik':10, 'listopad':11, 'grudzień':12};
+    const currentMonth = monthMap[monthName.toLowerCase()] || 10;
+    renderMonthGrid(year, currentMonth);
+    closeYearSelector();
+  }
+
+  function selectMonth(month, year, currentMonth){
+    const monthInv = {1:'styczeń', 2:'luty', 3:'marzec', 4:'kwiecień', 5:'maj', 6:'czerwiec', 7:'lipiec', 8:'sierpień', 9:'wrzesień', 10:'październik', 11:'listopad', 12:'grudzień'};
+    el('monthDisplay').textContent = monthInv[month] + ' ' + year;
+    renderStats(); renderEarnings();
+    closeMonthSelector();
+  }
+
+  function goToToday(){
+    const today = new Date();
+    const todayMonth = today.getMonth() + 1;
+    const todayYear = today.getFullYear();
+    const monthInv = {1:'styczeń', 2:'luty', 3:'marzec', 4:'kwiecień', 5:'maj', 6:'czerwiec', 7:'lipiec', 8:'sierpień', 9:'wrzesień', 10:'październik', 11:'listopad', 12:'grudzień'};
+    el('monthDisplay').textContent = monthInv[todayMonth] + ' ' + todayYear;
+    renderStats(); renderEarnings();
+    closeMonthSelector();
+  }
+
   el('editBtn')?.addEventListener('click',()=>{ if(currentId){ openDialog(currentId); setReadOnly(false);} });
   el('cancelDialog')?.addEventListener('click',()=>{ closeDialog(); });
   el('deleteBtn')?.addEventListener('click',()=>{
@@ -842,6 +1007,7 @@
   // --- INCOME ENTRIES LOGIC ---
   let pendingIncomeDeleteId = null;
   let currentIncomeType = 'cash';
+  let chartYear = new Date().getFullYear();
   
   function setTodayDate(){
     const today = new Date().toISOString().split('T')[0];
@@ -916,6 +1082,136 @@
     const cashBar = el('cashBar');
     if(onlineBar) onlineBar.style.width = total > 0 ? (online / total * 100) + '%' : '0%';
     if(cashBar) cashBar.style.width = total > 0 ? (cash / total * 100) + '%' : '0%';
+    
+    // Draw chart
+    drawChart(month, year);
+  }
+
+  function prevChartYear(){
+    chartYear--;
+    el('chartYearDisplay').textContent = chartYear;
+    drawChart(new Date().getMonth() + 1, chartYear);
+  }
+
+  function nextChartYear(){
+    chartYear++;
+    el('chartYearDisplay').textContent = chartYear;
+    drawChart(new Date().getMonth() + 1, chartYear);
+  }
+
+  function drawChart(month, year){
+    const canvas = el('earningsChart');
+    if(!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    
+    const monthInv = {1:'sty', 2:'lut', 3:'mar', 4:'kwi', 5:'maj', 6:'cze', 7:'lip', 8:'sie', 9:'wrz', 10:'paź', 11:'lis', 12:'gru'};
+    
+    // Get 12 months data for the selected year (chartYear)
+    const months12 = [];
+    
+    for(let m = 0; m < 12; m++){
+      const d = new Date(chartYear, m, 1);
+      months12.push({month: d.getMonth() + 1, year: d.getFullYear()});
+    }
+    
+    // Collect earnings by month and type
+    const monthsData = {};
+    months12.forEach(m => {
+      monthsData[`${m.year}-${m.month}`] = {cash: 0, card: 0, total: 0};
+    });
+    
+    (state.earnings || []).forEach(entry => {
+      const d = new Date(entry.date + 'T00:00:00');
+      const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+      if(monthsData[key]){
+        const type = entry.type === 'cash' ? 'cash' : 'card';
+        monthsData[key][type] += entry.amount;
+        monthsData[key].total += entry.amount;
+      }
+    });
+    
+    const maxVal = Math.max(...Object.values(monthsData).map(m => m.total), 1);
+    
+    // Padding and dimensions - different for each side
+    const padLeft = 50;
+    const padRight = 20;
+    const padTop = 28;
+    const padBottom = 28;
+    const w = canvas.width - padLeft - padRight;
+    const h = canvas.height - padTop - padBottom;
+    const barWidth = w / 12;
+    
+    // Colors
+    const colors = {cash: '#22c55e', card: '#5dd7ef'};
+    
+    // Draw grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.font = '10px system-ui';
+    ctx.fillStyle = 'rgba(154, 163, 173, 0.7)';
+    
+    // Y-axis labels and grid
+    for(let i = 0; i <= 5; i++){
+      const val = (maxVal / 5) * i;
+      const y = padTop + h - (i / 5) * h;
+      ctx.fillText(val.toFixed(0) + ' zł', 3, y + 4);
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.beginPath();
+      ctx.moveTo(padLeft, y);
+      ctx.lineTo(canvas.width - padRight, y);
+      ctx.stroke();
+    }
+    
+    // Draw bars
+    const today = new Date();
+    const todayMonth = today.getMonth() + 1;
+    const todayYear = today.getFullYear();
+    
+    months12.forEach((m, idx) => {
+      const key = `${m.year}-${m.month}`;
+      const data = monthsData[key];
+      const x = padLeft + idx * barWidth + barWidth * 0.15;
+      const barH = barWidth * 0.7;
+      
+      let stackY = 0;
+      
+      ['cash', 'card'].forEach(type => {
+        const amount = data[type];
+        const barHeight = (amount / maxVal) * h;
+        const barY = padTop + h - stackY - barHeight;
+        
+        ctx.fillStyle = colors[type];
+        ctx.fillRect(x, barY, barH, barHeight);
+        
+        stackY += barHeight;
+      });
+      
+      // Month label - centered under bar area
+      ctx.fillStyle = 'rgba(154, 163, 173, 0.75)';
+      ctx.font = '10px system-ui';
+      const label = monthInv[m.month];
+      const labelX = padLeft + (idx + 0.5) * barWidth;
+      ctx.textAlign = 'center';
+      ctx.fillText(label, labelX, canvas.height - 10);
+    });
+    
+    // Legend - at top
+    const legendY = 12;
+    ctx.font = '10px system-ui';
+    ctx.textAlign = 'left';
+    
+    ctx.fillStyle = '#22c55e';
+    ctx.fillRect(padLeft, legendY, 6, 6);
+    ctx.fillStyle = 'rgba(154, 163, 173, 0.9)';
+    ctx.fillText('Stacjonarnie', padLeft + 9, legendY + 5);
+    
+    ctx.fillStyle = '#5dd7ef';
+    ctx.fillRect(padLeft + 110, legendY, 6, 6);
+    ctx.fillStyle = 'rgba(154, 163, 173, 0.9)';
+    ctx.fillText('Online', padLeft + 119, legendY + 5);
   }
 
   function renderEarnings(){
