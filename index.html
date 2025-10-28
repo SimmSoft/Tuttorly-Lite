@@ -19,7 +19,7 @@
       --card:#181a1f;
       --muted:#9aa3ad;
       --text:#e9ecf1;
-      --accent:#6ee7ff;
+      --accent:#5dd7ef;
       --accent-2:#8b5cf6;
       --danger:#ef4444;
       --ok:#22c55e;
@@ -50,7 +50,7 @@
       animation: splashFade 1.2s ease 1.2s forwards;
     }
     .splash-logo{font-weight:900; font-size:48px; letter-spacing:.6px;
-      background:linear-gradient(145deg,var(--accent),var(--accent-2));
+      background:linear-gradient(145deg,#1a2847,#0f1626);
       -webkit-background-clip:text; background-clip:text; color:transparent;
       animation: popIn .8s ease;
     }
@@ -70,7 +70,7 @@
 
     /* APP CHROME */
     .appbar{display:flex; align-items:center; gap:10px; padding:2px 6px 6px 6px;}
-    .logo{width:28px; height:28px; border-radius:9px; background:linear-gradient(145deg,var(--accent),var(--accent-2)); display:grid; place-items:center; font-weight:800; color:#0b0c10}
+    .logo{width:28px; height:28px; border-radius:9px; background:linear-gradient(145deg,#1a2847,#0f1626); display:grid; place-items:center; font-weight:800; color:var(--text)}
     .title{font-weight:800; letter-spacing:.2px}
     .spacer{flex:1}
     .iconbtn{width:38px; height:38px; border-radius:12px; display:grid; place-items:center; cursor:pointer; border:1px solid var(--border); background:#151821}
@@ -78,28 +78,34 @@
     .iconbtn.ghost{background:transparent}
     .iconbtn.primary{
       /* Upodobnione do FAB (+) */
-      background:linear-gradient(145deg, var(--accent-2), var(--accent));
+      background:linear-gradient(145deg, #1a2847, #0f1626);
       border:none;
       border-radius:14px;
-      color:#0b0c10;
+      color:var(--text);
       box-shadow:0 10px 22px rgba(0,0,0,.35);
       transition:transform .08s ease, filter .15s ease;
     }
-    .iconbtn.primary svg{color:#0b0c10}
+    .iconbtn.primary svg{color:var(--text)}
     .iconbtn.primary:hover{filter:brightness(1.05)}
     .iconbtn.primary:active{transform:scale(.97)} 
 
     /* BADGE */
-    .tabs{display:flex; gap:8px; margin:8px 0 12px}
-    .tab{flex:1; text-align:center; padding:10px; border-radius:12px; border:1px solid var(--border); color:var(--muted)}
+    .tabs{display:flex; gap:8px; margin:8px 0 12px; cursor:pointer}
+    .tab{flex:1; text-align:center; padding:10px; border-radius:12px; border:1px solid var(--border); color:var(--muted); cursor:pointer; transition:all .15s ease}
+    .tab:hover{background:rgba(255,255,255,.04)}
     .tab.active{background:linear-gradient(180deg,rgba(139,92,246,.17),rgba(110,231,255,.12)); color:var(--text)}
 
+    /* VIEWS */
+    .view{display:none !important; flex-direction:column; gap:10px; flex:1; overflow:hidden; animation:fadeIn .3s ease}
+    .view.active{display:flex !important}
+    @keyframes fadeIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
+
     /* LIST */
-    .list{display:flex; flex-direction:column; gap:10px; overflow:auto; padding-right:4px}
+    .list{display:flex; flex-direction:column; gap:10px; overflow:auto; padding-right:4px; padding-bottom:70px}
     .card{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:12px; display:flex; gap:12px; align-items:center; cursor:pointer; transition:transform .05s ease, background .15s}
     .card:hover{background:#1a1e27}
     .card:active{transform:scale(.995)}
-    .drag-handle{display:flex; align-items:center; padding:0 8px 0 4px; cursor:grab; color:var(--muted)}
+    .drag-handle{display:flex; align-items:center; padding:0 8px 0 4px; cursor:grab; color:var(--muted); opacity:0.1}
     .drag-handle svg{width:24px; height:24px; pointer-events:none}
     .card.dragging {cursor:grabbing}
     .card.dragging .drag-handle{cursor:grabbing}
@@ -155,10 +161,13 @@
     .map{border:0; width:100%; height:340px; border-radius:14px; border:1px solid var(--border); pointer-events:auto}
 
     /* FOOTER */
-    .copyright{margin-top:12px; text-align:center; color:var(--muted); font-size:12px}
+    .copyright{margin-top:12px; text-align:center; color:var(--muted); font-size:12px; padding-bottom:12px}
 
     /* FAB */
-    .fab{position:absolute; right:26px; bottom:64px; width:56px; height:56px; border-radius:20px; display:grid; place-items:center; cursor:pointer; background:linear-gradient(145deg,var(--accent-2), var(--accent)); color:#0b0c10; font-weight:900; border:none; box-shadow:0 10px 22px rgba(0,0,0,.35); z-index:5}
+    .fab{position:sticky; bottom:0; left:0; right:0; width:100%; height:56px; border-radius:0 0 12px 12px; display:grid; place-items:center; cursor:pointer; background:linear-gradient(145deg,#1a2847,#0f1626); color:var(--text); font-weight:900; border:1px solid var(--border); box-shadow:0 -4px 12px rgba(0,0,0,.3); z-index:5; transition:background .3s ease; margin:0; border-top:1px solid var(--border)}
+    .fab:hover{filter:brightness(1.05)}
+    .fab:active{transform:scale(.98)}
+    .fab.dark{background:linear-gradient(145deg,#1a2847,#0f1626); color:var(--text); border-top-color:rgba(255,255,255,.15)}
 
     /* MODAL */
     .dialog-wrap{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.5); z-index:30}
@@ -171,10 +180,10 @@
     .divider{display:flex; align-items:center; gap:10px; margin:10px 0 6px;}
     .divider::before, .divider::after{content:''; height:1px; background:var(--border); flex:1}
     .divider span{font-size:12px; color:var(--muted); letter-spacing:.4px}
-    .footer{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:14px}
+    .footer{display:flex; justify-content:center; align-items:center; gap:10px; margin-top:14px}
     .footerRight{display:flex; gap:10px}
     .btn.danger{background:linear-gradient(145deg,#ef4444,#dc2626); border-color:transparent; color:#fff; font-weight:700}
-    .btn.primary{background:linear-gradient(145deg,var(--accent-2),var(--accent)); border-color:transparent; color:#0b0c10; font-weight:900}
+    .btn.primary{background:linear-gradient(145deg,#1a2847,#0f1626); border-color:transparent; color:var(--text); font-weight:900}
 
     /* Upload (avatar) */
     .upload{display:flex; align-items:center; gap:12px; border:1px dashed var(--border); border-radius:16px; padding:12px; background:#0f1218; cursor:pointer}
@@ -187,7 +196,13 @@
     .installbar{position:fixed; left:50%; transform:translateX(-50%); bottom:14px; width:min(560px,92vw); background:#0f1218; border:1px solid var(--border); border-radius:14px; padding:10px 12px; box-shadow:var(--shadow); display:none; align-items:center; gap:10px; z-index:1000}
     .installbar .label{flex:1; font-size:14px}
     .installbar .close{width:32px; height:32px; border-radius:10px; display:grid; place-items:center; border:1px solid var(--border); cursor:pointer}
-    .installbar .action{height:36px; padding:0 12px; border-radius:999px; background:linear-gradient(145deg,var(--accent-2),var(--accent)); color:#0b0c10; border:none; font-weight:800; cursor:pointer}
+    .installbar .action{height:36px; padding:0 12px; border-radius:999px; background:linear-gradient(145deg,#1a2847,#0f1626); color:var(--text); border:none; font-weight:800; cursor:pointer}
+
+    /* Income Type Selector */
+    .incomeTypeSelector{display:flex; gap:10px; margin:10px 0; justify-content:center}
+    .incomeTypeBtn{flex:1; height:48px; border-radius:14px; border:1px solid var(--border); background:#1a1e27; color:var(--muted); cursor:pointer; transition:all .15s ease; font-weight:600; font-size:14px}
+    .incomeTypeBtn:hover{background:#1f2430}
+    .incomeTypeBtn.active{background:linear-gradient(145deg,#1a2847,#0f1626); border:none; color:var(--text); font-weight:700}
 
     @media (max-width:440px){ .phone{width:100%; height:calc(100vh - 48px)} }
     
@@ -240,10 +255,21 @@
         <input id="importFile" type="file" accept="application/json" style="display:none" />
       </div>
 
-      <div class="tabs"><div class="tab active" id="viewBadge">Uczniowie</div></div>
+      <!-- NAVIGATION TABS -->
+      <div class="tabs">
+        <div class="tab active" id="studentsTab" data-view="students">Uczniowie</div>
+        <div class="tab" id="statsTab" data-view="stats">Statystyki</div>
+      </div>
 
-      <!-- LIST VIEW -->
-      <div class="list" id="listView"></div>
+      <!-- STUDENTS VIEW -->
+      <div class="view active" id="studentsView">
+        <div class="list" id="listView"></div>
+      </div>
+
+      <!-- STATS VIEW -->
+      <div class="view" id="statsView">
+        <div class="list" id="earningsList"></div>
+      </div>
 
       <!-- DETAIL VIEW -->
       <div class="detail readonly" id="detailView">
@@ -294,7 +320,6 @@
         <div class="map-wrap" style="display: none;"><iframe class="map" id="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>
       </div>
 
-      <div class="copyright">© SimmSoft 2025</div>
       <button class="fab" id="addBtn" title="Dodaj ucznia">+</button>
     </div>
   </div>
@@ -370,6 +395,32 @@
     </div>
   </div>
 
+  <!-- INCOME ENTRY MODAL -->
+  <div class="dialog-wrap" id="incomeDialogWrap">
+    <div class="dialog" style="display:flex; flex-direction:column">
+      <h3 id="incomeDialogTitle">Nowy wpis dochodów</h3>
+      
+      <div class="row"><input id="incomeAmount" type="number" placeholder="Kwota (PLN)" step="0.01" inputmode="decimal" /></div>
+      
+      <div class="incomeTypeSelector">
+        <button type="button" class="incomeTypeBtn active" data-type="cash">💵 Gotówka</button>
+        <button type="button" class="incomeTypeBtn" data-type="online">🌐 Online</button>
+      </div>
+      <input id="incomeType" type="hidden" value="cash" />
+      
+      <div class="row"><input id="incomeDate" type="date" /></div>
+      <div class="row"><textarea id="incomeDesc" placeholder="Opis (opcjonalnie)"></textarea></div>
+      
+      <div class="footer" style="margin-top:auto">
+        <button class="btn danger" id="incomeDeleteBtn" style="display:none">Usuń</button>
+        <div class="footerRight">
+          <button class="btn ghost" id="incomeCancelBtn">Anuluj</button>
+          <button class="btn primary" id="incomeConfirmBtn">Zapisz</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- INSTALL BAR -->
   <div id="installBar" class="installbar">
     <div class="logo" style="width:28px;height:28px">Tu</div>
@@ -384,7 +435,7 @@
 
   let state = load();
   let currentId = null;
-  let currentView = 'list';
+  let currentView = 'students';
   let pendingDeleteId = null;
 
   // --- Safe History helpers (no-ops on sandbox/about:srcdoc) ---
@@ -397,29 +448,57 @@
   function uid(){ return Math.random().toString(36).slice(2,10); }
   function formatPLN(n){ try{ return new Intl.NumberFormat('pl-PL',{style:'currency',currency:'PLN', maximumFractionDigits:0}).format(n);}catch{ return Math.round(n)+' zł'; } }
   function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
-  function load(){ const raw = localStorage.getItem(storeKey); if(raw){ try{ const d=JSON.parse(raw); d.students?.forEach((s,i)=>{ if(typeof s.order!=="number") s.order=i; if(!s.pricing) s.pricing={}; }); return d; }catch{} }
+  function load(){ const raw = localStorage.getItem(storeKey); if(raw){ try{ const d=JSON.parse(raw); d.students?.forEach((s,i)=>{ if(typeof s.order!=="number") s.order=i; if(!s.pricing) s.pricing={}; }); if(!d.earnings) d.earnings=[]; return d; }catch{} }
     return { students:[
       {id:uid(), order:0, name:'Anna Nowak', place:'Zielona Góra', notes:'Matematyka, 7 klasa', balance:10, pricing:{remote60:60, remote90:90, remote120:120, station60:80, station90:110, station120:140}, active:{type:'remote', dur:60}},
       {id:uid(), order:1, name:'Jan Kowalski', place:'Wrocław', notes:'Fizyka, matura', balance:-10, pricing:{remote60:70, remote90:100, remote120:120, station60:90, station90:130, station120:160}, active:{type:'station', dur:90}}
-    ]}; }
+    ], earnings:[] }; }
 
   window.addEventListener('load', ()=>{ setTimeout(()=>{ const s = el('splash'); if(s) s.style.display='none'; el('phone').classList.add('show'); }, 1200); });
+
+  // View switching for tabs
+  function switchTab(tabName){
+    // Update tab active state
+    const tabs = document.querySelectorAll('.tabs .tab');
+    tabs.forEach(tab => tab.classList.remove('active'));
+    const activeTab = document.querySelector(`.tabs .tab[data-view="${tabName}"]`);
+    if(activeTab) activeTab.classList.add('active');
+
+    // Update view visibility
+    const views = document.querySelectorAll('.view');
+    views.forEach(view => view.classList.remove('active'));
+    const activeView = el(tabName + 'View');
+    if(activeView) activeView.classList.add('active');
+
+    // Update FAB style and render view
+    const fab = el('addBtn');
+    if(tabName === 'stats'){
+      if(fab) fab.classList.add('dark');
+      renderEarnings();
+    } else {
+      if(fab) fab.classList.remove('dark');
+    }
+
+    currentView = tabName;
+  }
+
+  // Tab click handlers
+  el('studentsTab')?.addEventListener('click', ()=>{ switchTab('students'); });
+  el('statsTab')?.addEventListener('click', ()=>{ switchTab('stats'); });
 
   function setView(which){
     const list = el('listView');
     const detail = el('detailView');
-    const badge = el('viewBadge');
     const fab = el('addBtn');
-    currentView = which;
+    const studentsView = el('studentsView');
+    
     if(which==='detail'){
-      list && (list.style.display='none');
+      studentsView && (studentsView.style.display='none');
       detail && (detail.style.display='flex');
-      badge && (badge.textContent='Szczegóły');
       fab && (fab.style.display='none');
     } else {
-      list && (list.style.display='flex');
+      studentsView && (studentsView.style.display='flex');
       detail && (detail.style.display='none');
-      badge && (badge.textContent='Uczniowie');
       fab && (fab.style.display='grid');
     }
   }
@@ -605,7 +684,12 @@
     setTimeout(()=>sName&&sName.focus(),50);
   }
   function closeDialog(){ dialog && (dialog.style.display='none'); }
-  el('addBtn')?.addEventListener('click',()=>{ if(currentView!=='list') return; openDialog(); });
+  function closeIncomeDialog(){ const incomeDialog=el('incomeDialogWrap'); if(incomeDialog) incomeDialog.style.display='none'; }
+  
+  el('addBtn')?.addEventListener('click',()=>{ 
+    if(currentView==='students'){ openDialog(); } 
+    else if(currentView==='stats'){ openIncomeDialog(); }
+  });
   el('editBtn')?.addEventListener('click',()=>{ if(currentId){ openDialog(currentId); setReadOnly(false);} });
   el('cancelDialog')?.addEventListener('click',()=>{ closeDialog(); });
   el('deleteBtn')?.addEventListener('click',()=>{
@@ -657,6 +741,154 @@
     const isHidden = mapWrap.style.display === 'none';
     mapWrap.style.display = isHidden ? 'block' : 'none';
     el('toggleMapBtn').textContent = isHidden ? 'Ukryj mapę' : 'Pokaż mapę';
+  });
+
+  // --- INCOME ENTRIES LOGIC ---
+  let pendingIncomeDeleteId = null;
+  let currentIncomeType = 'cash';
+  
+  function setTodayDate(){
+    const today = new Date().toISOString().split('T')[0];
+    el('incomeDate').value = today;
+  }
+
+  function updateIncomeTypeButtons(type){
+    currentIncomeType = type;
+    el('incomeType').value = type;
+    document.querySelectorAll('.incomeTypeBtn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.type === type);
+    });
+  }
+
+  function openIncomeDialog(editId){
+    const incomeDialog = el('incomeDialogWrap');
+    if(!incomeDialog) return;
+    incomeDialog.style.display='flex';
+    
+    const title = el('incomeDialogTitle');
+    const amount = el('incomeAmount');
+    const date = el('incomeDate');
+    const desc = el('incomeDesc');
+    const delBtn = el('incomeDeleteBtn');
+
+    if(editId){
+      const entry = state.earnings.find(e => e.id === editId);
+      if(!entry) return;
+      title && (title.textContent = 'Edytuj wpis dochodów');
+      amount && (amount.value = entry.amount);
+      updateIncomeTypeButtons(entry.type);
+      date && (date.value = entry.date);
+      desc && (desc.value = entry.description || '');
+      if(delBtn) delBtn.style.display = 'inline-flex';
+      incomeDialog.dataset.editId = editId;
+    } else {
+      title && (title.textContent = 'Nowy wpis dochodów');
+      amount && (amount.value = '');
+      updateIncomeTypeButtons('cash');
+      desc && (desc.value = '');
+      setTodayDate();
+      if(delBtn) delBtn.style.display = 'none';
+      delete incomeDialog.dataset.editId;
+    }
+    setTimeout(() => amount && amount.focus(), 50);
+  }
+
+  function renderEarnings(){
+    const list = el('earningsList');
+    if(!list) return;
+    list.innerHTML = '';
+    
+    if(!state.earnings || state.earnings.length === 0){
+      list.innerHTML = `<div class="card" style="justify-content:center; text-align:center; padding:24px">Brak wpisów dochodów. Kliknij <b>+</b> aby dodać.</div>`;
+      return;
+    }
+
+    const sorted = state.earnings.slice().sort((a, b) => new Date(b.date) - new Date(a.date));
+    sorted.forEach(entry => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.dataset.id = entry.id;
+      const typeLabel = entry.type === 'cash' ? '💵' : '🌐';
+      const dateObj = new Date(entry.date + 'T00:00:00');
+      const dateStr = dateObj.toLocaleDateString('pl-PL', {year:'numeric', month:'short', day:'numeric'});
+      
+      card.innerHTML = `
+        <div style="flex:1">
+          <div class="name">${formatPLN(entry.amount)} <span style="font-size:12px; color:var(--muted)">${typeLabel}</span></div>
+          <div class="sub">${dateStr}${entry.description ? ' • ' + escapeHtml(entry.description) : ''}</div>
+        </div>`;
+      
+      card.addEventListener('click', () => {
+        openIncomeDialog(entry.id);
+      });
+      
+      list.appendChild(card);
+    });
+  }
+
+  const incomeDialog = el('incomeDialogWrap');
+  
+  // Handle income type button clicks
+  document.querySelectorAll('.incomeTypeBtn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const type = btn.dataset.type;
+      updateIncomeTypeButtons(type);
+    });
+  });
+  
+  el('incomeCancelBtn')?.addEventListener('click', () => closeIncomeDialog());
+  
+  el('incomeConfirmBtn')?.addEventListener('click', () => {
+    const amount = Number(el('incomeAmount')?.value);
+    const type = el('incomeType')?.value || 'online';
+    const date = el('incomeDate')?.value;
+    const desc = el('incomeDesc')?.value.trim() || '';
+
+    if(!amount || amount <= 0){
+      alert('Podaj kwotę większą niż 0');
+      return;
+    }
+    if(!date){
+      alert('Podaj datę');
+      return;
+    }
+
+    if(incomeDialog?.dataset.editId){
+      const entry = state.earnings.find(e => e.id === incomeDialog.dataset.editId);
+      if(!entry) return;
+      entry.amount = amount;
+      entry.type = type;
+      entry.date = date;
+      entry.description = desc;
+    } else {
+      state.earnings.push({
+        id: uid(),
+        amount,
+        type,
+        date,
+        description: desc,
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    save();
+    closeIncomeDialog();
+    renderEarnings();
+  });
+
+  el('incomeDeleteBtn')?.addEventListener('click', () => {
+    if(!incomeDialog?.dataset.editId) return;
+    pendingIncomeDeleteId = incomeDialog.dataset.editId;
+    const entry = state.earnings.find(e => e.id === pendingIncomeDeleteId);
+    const txt = `Na pewno chcesz usunąć wpis ${formatPLN(entry?.amount || 0)}? Tej operacji nie można cofnąć.`;
+    if(confirm(txt)){
+      state.earnings = state.earnings.filter(e => e.id !== pendingIncomeDeleteId);
+      save();
+      closeIncomeDialog();
+      renderEarnings();
+    }
+    pendingIncomeDeleteId = null;
   });
 
   renderList();
