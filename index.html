@@ -116,7 +116,7 @@
     .card{background:var(--card); border:1px solid var(--border); border-radius:16px; padding:12px; display:flex; gap:12px; align-items:center; cursor:pointer; transition:transform .05s ease, background .15s}
     .card:hover{background:#1a1e27}
     .card:active{transform:scale(.995)}
-    .drag-handle{display:flex; align-items:center; padding:0 8px 0 4px; cursor:grab; color:var(--muted); opacity:0.1}
+    .drag-handle{display:flex; align-items:center; padding:0 8px 0 4px; cursor:grab; color:var(--muted); opacity:0.1; touch-action:none}
     .drag-handle svg{width:24px; height:24px; pointer-events:none}
     .card.dragging {cursor:grabbing}
     .card.dragging .drag-handle{cursor:grabbing}
@@ -723,6 +723,8 @@
   document.addEventListener('touchstart', (e)=>{
     // Don't swipe if touching input/textarea or if modals are open
     if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if(e.target.closest('.drag-handle')) return; // Ignore drag-handle
+    if(e.target.closest('button')) return; // Ignore buttons
     if(dialog && dialog.style.display === 'flex') return;
     if(el('incomeDialogWrap') && el('incomeDialogWrap').style.display === 'flex') return;
     if(el('monthSelectorWrap') && el('monthSelectorWrap').style.display === 'flex') return;
@@ -735,8 +737,11 @@
 
   // Touch end
   document.addEventListener('touchend', (e)=>{
-    // Ignore if inputs are involved
+    // Ignore if inputs are involved or if dragging is active
     if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if(dragEl) return; // Don't swipe if drag is active
+    if(e.target.closest('.drag-handle')) return;
+    if(e.target.closest('button')) return;
 
     const touchEndX = e.changedTouches[0].clientX;
     const touchEndY = e.changedTouches[0].clientY;
@@ -808,7 +813,6 @@
   function enableCardDnD(card, id) {
     const handle = card.querySelector('.drag-handle');
     const list = el('listView');
-    let dragEl = null, placeholder = null, offsetY = 0;
 
     // Click on card to select
     card.addEventListener('click', (e) => {
@@ -818,7 +822,8 @@
 
     // Drag from handle
     handle.addEventListener('pointerdown', e => {
-        if (e.button !== 0) return;
+        if (e.pointerType === 'mouse' && e.button !== 0) return; // Only left mouse button
+        e.preventDefault();
         e.stopPropagation();
         startDrag(card, e);
         handle.setPointerCapture(e.pointerId);
@@ -1563,7 +1568,7 @@
     // Only add to history if different from last view
     if(viewHistory[viewHistory.length - 1] !== tabName){
       viewHistory.push(tabName);
-      safeReplace(location.pathname + location.search, {screen: tabName});
+      safePush(location.pathname + location.search, {screen: tabName});
     }
   };
 
@@ -1581,6 +1586,10 @@
   // Handle browser back button and system back button
   function handleBackButton(){
     // Priority 1: Close any open dialogs/modals
+    if(el('settingsDialogWrap') && el('settingsDialogWrap').style.display === 'flex'){
+      closeSettingsDialog();
+      return;
+    }
     if(dialog && dialog.style.display === 'flex'){
       closeDialog();
       return;
