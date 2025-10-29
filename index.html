@@ -677,6 +677,12 @@
 
   // View switching for tabs
   function switchTab(tabName){
+    // Close detail view when switching tabs
+    if(el('detailView') && el('detailView').style.display === 'flex'){
+      setView('list');
+      currentId = null;
+    }
+
     // Update tab active state
     const tabs = document.querySelectorAll('.tabs .tab');
     tabs.forEach(tab => tab.classList.remove('active'));
