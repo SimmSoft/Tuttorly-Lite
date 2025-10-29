@@ -40,6 +40,10 @@
       color:var(--text); font:500 16px/1.4 system-ui, Segoe UI, Roboto, Inter, Arial;
       display:grid; place-items:center; padding:24px;
       overflow:hidden;
+      user-select:none;
+      -webkit-user-select:none;
+      -moz-user-select:none;
+      -ms-user-select:none;
     }
 
     /* SPLASH */
@@ -132,7 +136,7 @@
     .row{display:flex; gap:8px; justify-content:center}
     .detailTop{display:flex; align-items:center; justify-content:space-between; width:100%}
     input, textarea, select, button{ font:inherit; }
-    input, textarea, select{ width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#101219; color:var(--text);}    
+    input, textarea, select{ width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#101219; color:var(--text); user-select:text; -webkit-user-select:text; -moz-user-select:text; -ms-user-select:text;}    
     textarea{min-height:92px; resize:vertical}
     .readonly input, .readonly textarea, .readonly select{opacity:.75; pointer-events:none}
     .readonly #dLocation{opacity:.5; pointer-events:none}
@@ -275,6 +279,19 @@
     .statsHeader::before, .statsHeader::after{content:''; height:1px; background:var(--border); flex:1}
     .statsHeader span{flex:0}
 
+    /* Empty State */
+    .emptyState{border:1px solid var(--border); border-radius:16px; padding:24px; background:#0f1218; cursor:default; display:flex; justify-content:center; align-items:center; text-align:center; color:var(--muted); font-size:14px; pointer-events:none; user-select:none; line-height:1.6}
+    
+    /* Annual Summary Section */
+    .annualSummaryWrap{margin-bottom:16px}
+    .annualSummaryHeader{display:flex; align-items:center; gap:10px; margin-bottom:12px; color:var(--text); font-weight:700; font-size:13px; letter-spacing:.2px; white-space:nowrap}
+    .annualSummaryHeader::before, .annualSummaryHeader::after{content:''; height:1px; background:var(--border); flex:1}
+    .annualSummaryHeader span{flex:0}
+    .annualSummaryGrid{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px}
+    .annualCard{background:linear-gradient(135deg,rgba(110,231,255,.12),rgba(139,92,246,.12)); border:1px solid var(--border); border-radius:14px; padding:12px; text-align:center}
+    .annualCard .summaryLabel{font-size:11px; color:var(--muted); font-weight:500; margin-bottom:6px; letter-spacing:.3px}
+    .annualCard .summaryAmount{font-weight:800; font-size:14px; color:var(--accent); letter-spacing:-.4px}
+
     @media (max-width:440px){ .phone{width:100%; height:calc(100vh - 48px)} }
     
     /* --- Display-Mode (installed PWA) --- */
@@ -369,12 +386,29 @@
           </div>
         </div>
 
-        <!-- Earnings Chart -->
-        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; padding:0 12px">
-          <button class="btn ghost" onclick="prevChartYear()" style="padding:2px 8px; font-size:11px; border:1px solid rgba(255,255,255,0.2)">◄</button>
-          <div style="font-size:12px; font-weight:600; color:var(--text-secondary); flex:1; text-align:center; min-width:50px" id="chartYearDisplay">2025</div>
-          <button class="btn ghost" onclick="nextChartYear()" style="padding:2px 8px; font-size:11px; border:1px solid rgba(255,255,255,0.2)">►</button>
+        <!-- Annual Summary Section -->
+        <div class="annualSummaryWrap">
+          <div class="annualSummaryHeader">
+            <span>Podsumowanie roczne</span>
+          </div>
+          <div class="annualSummaryGrid">
+            <div class="annualCard">
+              <div class="summaryLabel">Razem</div>
+              <div class="summaryAmount" id="annualTotal">0 zł</div>
+            </div>
+            <div class="annualCard">
+              <div class="summaryLabel">🌐 Karta</div>
+              <div class="summaryAmount" id="annualOnline">0 zł</div>
+            </div>
+            <div class="annualCard">
+              <div class="summaryLabel">💵 Gotówka</div>
+              <div class="summaryAmount" id="annualCash">0 zł</div>
+            </div>
+          </div>
         </div>
+
+        <!-- Earnings Chart -->
+
         <div class="chartWrapper">
           <canvas id="earningsChart"></canvas>
         </div>
@@ -962,9 +996,7 @@
     selectedYearInModal = year;
     el('yearDisplay').textContent = year;
     
-    // Reset chart year to current
-    chartYear = new Date().getFullYear();
-    el('chartYearDisplay').textContent = chartYear;
+    // Chart will use the year from monthDisplay selector
     
     renderMonthGrid(year, currentMonth);
     el('monthSelectorWrap').style.display = 'flex';
@@ -1184,20 +1216,41 @@
     const month = monthMap[monthName.toLowerCase()] || 10;
     const year = parseInt(yearStr) || 2025;
     
+    // Monthly totals
     let total = 0, online = 0, cash = 0;
+    
+    // Annual totals
+    let annualTotal = 0, annualOnline = 0, annualCash = 0;
     
     (state.earnings || []).forEach(entry => {
       const d = new Date(entry.date + 'T00:00:00');
-      if(d.getMonth() + 1 === month && d.getFullYear() === year){
+      const entryYear = d.getFullYear();
+      const entryMonth = d.getMonth() + 1;
+      
+      // Monthly calculation
+      if(entryMonth === month && entryYear === year){
         total += entry.amount;
         if(entry.type === 'cash') cash += entry.amount;
         else online += entry.amount;
       }
+      
+      // Annual calculation (only for current year)
+      if(entryYear === year){
+        annualTotal += entry.amount;
+        if(entry.type === 'cash') annualCash += entry.amount;
+        else annualOnline += entry.amount;
+      }
     });
     
+    // Update monthly stats
     el('totalAmount').textContent = formatPLN(total);
     el('onlineAmount').textContent = formatPLN(online);
     el('cashAmount').textContent = formatPLN(cash);
+    
+    // Update annual stats
+    el('annualTotal').textContent = formatPLN(annualTotal);
+    el('annualOnline').textContent = formatPLN(annualOnline);
+    el('annualCash').textContent = formatPLN(annualCash);
     
     // Update stat bars
     const onlineBar = el('onlineBar');
@@ -1205,23 +1258,13 @@
     if(onlineBar) onlineBar.style.width = total > 0 ? (online / total * 100) + '%' : '0%';
     if(cashBar) cashBar.style.width = total > 0 ? (cash / total * 100) + '%' : '0%';
     
-    // Draw chart
-    drawChart(month, year);
+    // Draw chart for the entire selected year
+    drawChart(year);
   }
 
-  function prevChartYear(){
-    chartYear--;
-    el('chartYearDisplay').textContent = chartYear;
-    drawChart(new Date().getMonth() + 1, chartYear);
-  }
 
-  function nextChartYear(){
-    chartYear++;
-    el('chartYearDisplay').textContent = chartYear;
-    drawChart(new Date().getMonth() + 1, chartYear);
-  }
 
-  function drawChart(month, year){
+  function drawChart(year){
     const canvas = el('earningsChart');
     if(!canvas) return;
     
@@ -1232,11 +1275,11 @@
     
     const monthInv = {1:'sty', 2:'lut', 3:'mar', 4:'kwi', 5:'maj', 6:'cze', 7:'lip', 8:'sie', 9:'wrz', 10:'paź', 11:'lis', 12:'gru'};
     
-    // Get 12 months data for the selected year (chartYear)
+    // Get 12 months data for the selected year
     const months12 = [];
     
     for(let m = 0; m < 12; m++){
-      const d = new Date(chartYear, m, 1);
+      const d = new Date(year, m, 1);
       months12.push({month: d.getMonth() + 1, year: d.getFullYear()});
     }
     
@@ -1342,7 +1385,7 @@
     list.innerHTML = '';
     
     if(!state.earnings || state.earnings.length === 0){
-      list.innerHTML = `<div class="card" style="justify-content:center; text-align:center; padding:24px">Brak wpisów dochodów. Kliknij aby dodać.</div>`;
+      list.innerHTML = `<div class="emptyState">Brak wpisów dochodów.<br>Kliknij <b>+</b>, aby dodać.</div>`;
       return;
     }
 
@@ -1431,9 +1474,17 @@
       state.earnings = state.earnings.filter(e => e.id !== pendingIncomeDeleteId);
       save();
       closeIncomeDialog();
+      renderStats();
       renderEarnings();
     }
     pendingIncomeDeleteId = null;
+  });
+
+  // Prevent text selection and copying (except in input/textarea)
+  document.addEventListener('copy', (e) => {
+    if(e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA'){
+      e.preventDefault();
+    }
   });
 
   renderList();
