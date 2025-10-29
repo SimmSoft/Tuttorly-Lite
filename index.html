@@ -106,6 +106,10 @@
     .view{display:none !important; flex-direction:column; gap:10px; flex:1; overflow:auto; animation:fadeIn .3s ease}
     .view.active{display:flex !important}
     @keyframes fadeIn{from{opacity:0; transform:translateY(8px)} to{opacity:1; transform:translateY(0)}}
+    
+    /* Smooth transitions for swipe navigation */
+    .phone{transition:none}
+    .view{transition:opacity .3s ease, transform .3s ease}
 
     /* LIST */
     .list{display:flex; flex-direction:column; gap:10px; overflow:visible; padding-right:4px; padding-bottom:70px}
@@ -701,6 +705,59 @@
   // Tab click handlers
   el('studentsTab')?.addEventListener('click', ()=>{ switchTab('students'); });
   el('statsTab')?.addEventListener('click', ()=>{ switchTab('stats'); });
+
+  // ===== SWIPE NAVIGATION =====
+  let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+  const SWIPE_THRESHOLD = 50; // pixels
+  const SWIPE_TIME_THRESHOLD = 300; // milliseconds
+
+  function handleSwipe(direction){
+    if(direction === 'left' && currentView === 'students'){
+      switchTab('stats');
+    } else if(direction === 'right' && currentView === 'stats'){
+      switchTab('students');
+    }
+  }
+
+  // Touch start
+  document.addEventListener('touchstart', (e)=>{
+    // Don't swipe if touching input/textarea or if modals are open
+    if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if(dialog && dialog.style.display === 'flex') return;
+    if(el('incomeDialogWrap') && el('incomeDialogWrap').style.display === 'flex') return;
+    if(el('monthSelectorWrap') && el('monthSelectorWrap').style.display === 'flex') return;
+    if(el('yearSelectorWrap') && el('yearSelectorWrap').style.display === 'flex') return;
+
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchStartTime = Date.now();
+  }, false);
+
+  // Touch end
+  document.addEventListener('touchend', (e)=>{
+    // Ignore if inputs are involved
+    if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+    const touchEndX = e.changedTouches[0].clientX;
+    const touchEndY = e.changedTouches[0].clientY;
+    const touchEndTime = Date.now();
+
+    const deltaX = touchEndX - touchStartX;
+    const deltaY = touchEndY - touchStartY;
+    const deltaTime = touchEndTime - touchStartTime;
+
+    // Ensure it's a horizontal swipe (not vertical scroll)
+    if(Math.abs(deltaY) > Math.abs(deltaX)) return;
+    if(deltaTime > SWIPE_TIME_THRESHOLD) return;
+    if(Math.abs(deltaX) < SWIPE_THRESHOLD) return;
+
+    // Determine swipe direction
+    if(deltaX > 0){
+      handleSwipe('right');
+    } else {
+      handleSwipe('left');
+    }
+  }, false);
 
   function setView(which){
     const list = el('listView');
@@ -1385,7 +1442,7 @@
     list.innerHTML = '';
     
     if(!state.earnings || state.earnings.length === 0){
-      list.innerHTML = `<div class="emptyState">Brak wpisów dochodów.<br>Kliknij <b>+</b>, aby dodać.</div>`;
+      list.innerHTML = `<div class="emptyState">Brak wpisów dochodów.<br>Kliknij +, aby dodać.</div>`;
       return;
     }
 
@@ -1493,6 +1550,87 @@
 
   // (Optional) seed history when supported (no-op in sandbox)
   safeReplace(location.pathname + location.search, {screen:'list'});
+
+  // ===== MOBILE BACK BUTTON HANDLING =====
+  // Track view history for back button behavior
+  let viewHistory = ['list'];
+  let detailHistory = []; // Track which student detail views were opened
+
+  // Override switchTab to update history
+  const originalSwitchTab = switchTab;
+  switchTab = function(tabName){
+    originalSwitchTab(tabName);
+    // Only add to history if different from last view
+    if(viewHistory[viewHistory.length - 1] !== tabName){
+      viewHistory.push(tabName);
+      safeReplace(location.pathname + location.search, {screen: tabName});
+    }
+  };
+
+  // Override setView to track detail view history
+  const originalSetView = setView;
+  setView = function(which){
+    originalSetView(which);
+    if(which === 'detail' && currentId){
+      detailHistory.push(currentId);
+    } else if(which === 'list'){
+      detailHistory = [];
+    }
+  };
+
+  // Handle browser back button and system back button
+  function handleBackButton(){
+    // Priority 1: Close any open dialogs/modals
+    if(dialog && dialog.style.display === 'flex'){
+      closeDialog();
+      return;
+    }
+    if(el('incomeDialogWrap') && el('incomeDialogWrap').style.display === 'flex'){
+      closeIncomeDialog();
+      return;
+    }
+    if(el('monthSelectorWrap') && el('monthSelectorWrap').style.display === 'flex'){
+      closeMonthSelector();
+      return;
+    }
+    if(el('yearSelectorWrap') && el('yearSelectorWrap').style.display === 'flex'){
+      closeYearSelector();
+      return;
+    }
+
+    // Priority 2: If in detail view, go back to list
+    if(el('detailView') && el('detailView').style.display === 'flex'){
+      setView('list');
+      currentId = null;
+      detailHistory = [];
+      return;
+    }
+
+    // Priority 3: If in stats tab, go back to students
+    if(currentView === 'stats'){
+      switchTab('students');
+      return;
+    }
+
+    // Priority 4: In students view - browser back button works normally
+    // (allow normal back navigation or exit)
+  }
+
+  // Listen for popstate (browser back button, history changes)
+  window.addEventListener('popstate', (e)=>{
+    handleBackButton();
+  });
+
+  // For Android back button when not in PWA mode
+  // Some browsers fire beforeunload, but we'll handle it with popstate
+  // For PWA standalone mode, the system handles it via history
+  
+  // Optional: Add support for keyboard Escape key as back
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){
+      handleBackButton();
+    }
+  });
 
   // Register Service Worker for installability & offline
   if ('serviceWorker' in navigator) {
