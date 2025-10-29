@@ -285,6 +285,9 @@
 
     /* Empty State */
     .emptyState{border:1px solid var(--border); border-radius:16px; padding:24px; background:#0f1218; cursor:default; display:flex; justify-content:center; align-items:center; text-align:center; color:var(--muted); font-size:14px; pointer-events:none; user-select:none; line-height:1.6}
+
+    /* Student Count */
+    .studentCount{text-align:center; color:var(--muted); font-size:13px; padding:8px 0 12px 0; margin-bottom:4px; font-weight:500}
     
     /* Annual Summary Section */
     .annualSummaryWrap{margin-bottom:16px}
@@ -797,7 +800,8 @@
 
   function renderList(){
     const list = el('listView'); if(!list) return; list.innerHTML='';
-    if(!state.students.length){ list.innerHTML = `<div class="card" style="justify-content:center; text-align:center; padding:24px">Brak uczniów. Kliknij <b>+</b> aby dodać.</div>`; return; }
+    if(!state.students.length){ list.innerHTML = `<div class="emptyState">Brak uczniów.<br>Kliknij + aby dodać.</div>`; return; }
+    list.innerHTML = `<div class="studentCount">Liczba uczniów: ${state.students.length}</div>`;
     const sorted = state.students.slice().sort((a,b)=> (a.order??0)-(b.order??0));
     sorted.forEach(s=>{
       const card = document.createElement('div'); card.className='card'; card.dataset.id=s.id;
@@ -1453,7 +1457,7 @@
     list.innerHTML = '';
     
     if(!state.earnings || state.earnings.length === 0){
-      list.innerHTML = `<div class="emptyState">Brak wpisów dochodów.<br>Kliknij +, aby dodać.</div>`;
+      list.innerHTML = `<div class="emptyState">Brak wpisów dochodów.<br>Kliknij + aby dodać.</div>`;
       return;
     }
 
