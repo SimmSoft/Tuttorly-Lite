@@ -124,14 +124,26 @@
     .amount.neg{color:var(--danger)}
 
     /* DETAIL */
-    .detail{display:none; flex-direction:column; gap:12px; min-height:100%;}
-    .row{display:flex; gap:8px}
-    .detailTop{display:flex; align-items:center; justify-content:space-between;}
+    .detail{display:none; flex-direction:column; gap:12px; min-height:100%; align-items:center; text-align:center}
+    .detail > *:not(.actions):not(.amountRow):not(.detailTop):not(.map-wrap){width:100%; max-width:280px; margin:0 auto}
+    .detail > .detailTop{width:100%; padding:0 12px}
+    .detail .actions, .detail .amountRow{width:100%; max-width:280px; margin:0 auto}
+    .detail .map-wrap{width:100%; max-width:340px; margin:0 auto}
+    .row{display:flex; gap:8px; justify-content:center}
+    .detailTop{display:flex; align-items:center; justify-content:space-between; width:100%}
     input, textarea, select, button{ font:inherit; }
     input, textarea, select{ width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--border); background:#101219; color:var(--text);}    
     textarea{min-height:92px; resize:vertical}
     .readonly input, .readonly textarea, .readonly select{opacity:.75; pointer-events:none}
+    .readonly #dLocation{opacity:.5; pointer-events:none}
     .readonly #customAmount{opacity:1; pointer-events:auto}
+    
+    /* NOTES EXPANDABLE */
+    .notesExpandable{border:1px solid var(--border); border-radius:12px; padding:12px; background:#0f1218; cursor:pointer; display:flex; flex-direction:column; align-items:flex-start; user-select:none; text-align:left; color:var(--muted); max-height:100px; overflow:hidden; transition:max-height .3s ease, background .2s ease}
+    .notesExpandable:hover{background:#151821}
+    .notesExpandable.expanded{background:linear-gradient(145deg,#1a1e27,#131820); color:var(--text); max-height:none; overflow:visible}
+    .notesContent{margin:0; font-family:inherit; white-space:pre-wrap; word-wrap:break-word; font-size:14px; color:inherit; line-height:1.5; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; text-overflow:ellipsis; width:100%}
+    .notesContent.show{display:block; -webkit-line-clamp:unset; overflow:visible; text-overflow:unset}
 
     /* HIDE number spinners */
     input[type=number]::-webkit-outer-spin-button,
@@ -385,43 +397,59 @@
           <div class="iconbtn primary" id="inlineBack" title="Wróć">
             <svg viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
           </div>
+          <div style="flex:1"></div>
           <div class="iconbtn primary" id="editBtn" title="Edytuj ucznia">
             <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42l-2.34-2.34a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.82z"/></svg>
           </div>
         </div>
+
+        <!-- Avatar -->
         <div class="center-avatar"><div class="avatar big" id="dAvatar"></div></div>
 
-        <div class="row"><input id="dName" placeholder="Imię i nazwisko" /></div>
-        <div class="row"><input id="dPlace" placeholder="Miejsce (miasto, ulica)" /></div>
-        <div class="row"><textarea id="dNotes" placeholder="Notatki o uczniu (preferencje, zakres, uwagi)"></textarea></div>
+        <!-- Name -->
+        <div class="row"><input id="dName" placeholder="Imię i nazwisko" style="max-width:280px; text-align:center" /></div>
 
-        <div class="row" style="align-items:center">
-          <div id="balanceWrap" class="balanceWrap">
-            <span class="muted">Nadwyżka:</span>
-            <span id="dBalance" class="amount">0 zł</span>
-            <span id="freeBadge" class="badge" style="display:none">Darmowa lekcja</span>
-          </div>
-          <div class="spacer"></div>
+        <!-- Subject/Class (previously place) - HIDDEN in view mode -->
+        <div class="row" style="display:none"><input id="dPlace" placeholder="Przedmiot, klasa" style="max-width:280px; text-align:center" /></div>
+
+        <!-- Expandable Notes -->
+        <div class="notesExpandable" id="notesToggle" style="max-width:280px; display:none">
+          <pre class="notesContent" id="dNotesDisplay"></pre>
+        </div>
+        <textarea id="dNotes" placeholder="Notatki o uczniu" style="display:none"></textarea>
+
+        <!-- Balance -->
+        <div id="balanceWrap" class="balanceWrap" style="max-width:280px; margin:0 auto; flex-direction:column; justify-content:center">
+          <div style="color:var(--muted); font-size:14px; margin-bottom:4px">Nadwyżka:</div>
+          <span id="dBalance" class="amount" style="font-size:18px; font-weight:900">0 zł</span>
+          <span id="freeBadge" class="badge" style="display:none; margin-left:0; margin-top:8px">Darmowa lekcja</span>
         </div>
 
-        <div class="row" id="activeRowView">
-          <div class="badge" id="activeBadge">Aktywne: —</div>
-          <div class="badge" id="priceBadge">Cena: —</div>
+        <!-- Active & Price -->
+        <div class="row" id="activeRowView" style="gap:16px; max-width:280px">
+          <div class="badge" id="activeBadge" style="flex:1">Aktywne: —</div>
+          <div class="badge" id="priceBadge" style="flex:1">Cena: —</div>
         </div>
 
-        <div class="actions">
+        <!-- Action Buttons -->
+        <div class="actions" style="max-width:280px">
           <button class="btn ok" id="plus10">+10 zł</button>
           <button class="btn bad" id="minus10">−10 zł</button>
           <button class="btn ghost" id="resetBtn" title="Wyzeruj saldo">Wyzeruj</button>
         </div>
 
-        <div class="actions amountRow">
+        <!-- Amount Buttons -->
+        <div class="actions amountRow" style="max-width:280px">
           <button class="btn ok padfix" id="addPlus">+ kwota</button>
           <button class="btn bad padfix" id="addMinus">− kwota</button>
           <input id="customAmount" type="number" placeholder="Custom" />
         </div>
 
-        <div class="row" style="margin-top: 12px;">
+        <!-- Location -->
+        <div class="row" style="max-width:280px"><input id="dLocation" placeholder="Miejsce (miasto)" style="text-align:center" /></div>
+
+        <!-- Map Button -->
+        <div class="row" style="margin-top: 12px; max-width:280px">
           <button class="btn" id="toggleMapBtn" style="width:100%">Pokaż mapę</button>
         </div>
         <div class="map-wrap" style="display: none;"><iframe class="map" id="map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>
@@ -782,7 +810,11 @@
   function selectStudent(id){
     currentId=id; const s=state.students.find(x=>x.id===id); if(!s) return;
     setView('detail'); setReadOnly(true);
-    el('dName').value=s.name||''; el('dPlace').value=s.place||''; el('dNotes').value=s.notes||'';
+    el('dName').value=s.name||''; 
+    el('dPlace').value=s.place||''; 
+    el('dNotes').value=s.notes||'';
+    el('dLocation').value=s.place||'';
+    updateNotesDisplay();
     renderAvatar(s); renderBalance(s.balance); updateMap(s.place); renderActiveSummary();
     safePush('#detail-'+id, {screen:'detail', id}); // no-op in sandbox
 
@@ -797,7 +829,40 @@
   function setReadOnly(ro){ el('detailView').classList.toggle('readonly', !!ro); }
   function updateMap(place){ const map=el('map'); const q=encodeURIComponent(place||'Polska'); map.src=`https://maps.google.com/maps?q=${q}&z=14&output=embed`; }
 
-  ['dName','dPlace','dNotes'].forEach(id=>{ el(id).addEventListener('input',()=>{ if(el('detailView').classList.contains('readonly')) return; const s=state.students.find(x=>x.id===currentId); if(!s) return; s.name=el('dName').value.trim(); s.place=el('dPlace').value.trim(); s.notes=el('dNotes').value.trim(); save(); renderList(); updateMap(s.place); renderAvatar(s); renderActiveSummary(); }); });
+  // Update notes display and toggle expandable
+  function updateNotesDisplay(){
+    const notes = el('dNotes').value || '';
+    const notesToggle = el('notesToggle');
+    const display = el('dNotesDisplay');
+    if(display) display.textContent = notes;
+    if(notesToggle) notesToggle.style.display = notes.length > 0 ? 'block' : 'none';
+    // Reset to collapsed state (3 linijki) when loading student
+    if(notesToggle) notesToggle.classList.remove('expanded');
+    if(display) display.classList.remove('show');
+  }
+
+  // Notes toggle handler - expand/collapse
+  el('notesToggle')?.addEventListener('click', ()=>{
+    const notesToggle = el('notesToggle');
+    const display = el('dNotesDisplay');
+    if(notesToggle) notesToggle.classList.toggle('expanded');
+    if(display) display.classList.toggle('show');
+  });
+
+  ['dName','dPlace','dNotes'].forEach(id=>{ el(id).addEventListener('input',()=>{ 
+    if(el('detailView').classList.contains('readonly')) { if(id==='dNotes') updateNotesDisplay(); return; }
+    const s=state.students.find(x=>x.id===currentId); if(!s) return; 
+    s.name=el('dName').value.trim(); 
+    s.place=el('dPlace').value.trim(); 
+    s.notes=el('dNotes').value.trim(); 
+    el('dLocation').value=s.place;
+    save(); renderList(); updateMap(s.place); renderAvatar(s); renderActiveSummary(); updateNotesDisplay();
+  }); });
+
+  // Sync dLocation display with dPlace
+  el('dPlace')?.addEventListener('input', ()=>{ 
+    el('dLocation').value = el('dPlace').value;
+  });
 
   function getActivePrice(){ const s=state.students.find(x=>x.id===currentId); if(!s) return 0; const key=(s.active?.type==='station'?'station':'remote')+String(s.active?.dur||60); const v=s.pricing?.[key]??0; return Number(v)||0; }
   function renderActiveSummary(){ const s=state.students.find(x=>x.id===currentId); if(!s) return; const typeLabel=(s.active?.type==='station')?'Stacjonarne':'Zdalne'; const dur=s.active?.dur||60; const price=getActivePrice(); const badge=el('activeBadge'); const priceBadge=el('priceBadge'); if(badge) badge.textContent=`Aktywne: ${typeLabel} — ${dur} min`; if(priceBadge) priceBadge.textContent=`Cena: ${price?formatPLN(price):'—'}`; evaluateFree(); }
@@ -1277,7 +1342,7 @@
     list.innerHTML = '';
     
     if(!state.earnings || state.earnings.length === 0){
-      list.innerHTML = `<div class="card" style="justify-content:center; text-align:center; padding:24px">Brak wpisów dochodów. Kliknij <b>+</b> aby dodać.</div>`;
+      list.innerHTML = `<div class="card" style="justify-content:center; text-align:center; padding:24px">Brak wpisów dochodów. Kliknij aby dodać.</div>`;
       return;
     }
 
