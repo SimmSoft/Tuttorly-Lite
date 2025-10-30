@@ -438,7 +438,7 @@
       <!-- CALENDAR VIEW -->
       <div class="view" id="terminyView">
         <!-- Week Schedule -->
-        <h3 style="color:var(--text); font-weight:700; margin:12px 0 16px; letter-spacing:.2px; font-size:16px; text-align:center">Plan zajęć</h3>
+        <h3 style="color:#fff; margin:12px 0 16px; letter-spacing:.3px; font-size:17px; text-align:center; background:linear-gradient(145deg, rgba(139,92,246,.15), rgba(110,231,255,.12)); padding:12px 20px; border-radius:14px; display:inline-block; width:100%; border:1px solid rgba(139,92,246,.2)">Plan Tego Tygodnia</h3>
         <div class="weekContainer" id="weekContainer"></div>
         
         <!-- Action Buttons -->
@@ -843,13 +843,13 @@
     // Update FAB style and render view
     const fab = el('addBtn');
     if(tabName === 'stats'){
-      if(fab) fab.classList.add('dark');
+      if(fab) { fab.classList.add('dark'); fab.style.display='grid'; }
       renderStats();
       renderEarnings();
     } else if(tabName === 'terminy'){
-      if(fab) fab.classList.add('dark');
+      if(fab) fab.style.display='none';
     } else {
-      if(fab) fab.classList.remove('dark');
+      if(fab) { fab.classList.remove('dark'); fab.style.display='grid'; }
     }
 
     currentView = tabName;
