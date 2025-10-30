@@ -195,7 +195,7 @@
 
     /* MODAL */
     .dialog-wrap{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.5); z-index:30}
-    .dialog{width:520px; max-width:92vw; background:#0f1218; border:1px solid var(--border); border-radius:18px; padding:16px; box-shadow:var(--shadow); max-height:90vh; overflow:auto}
+    .dialog{width:520px; max-width:92vw; background:#0f1218; border:1px solid var(--border); border-radius:18px; padding:12px; box-shadow:var(--shadow); max-height:85vh; overflow:auto}
     .dialog h3{margin:10px 0 8px}
     .dialog .row{margin:6px 0}
     .priceRow{display:flex; align-items:center; gap:10px}
@@ -250,10 +250,10 @@
     /* TERMINY VIEW */
     .weekContainer{display:flex; flex-direction:column; gap:0; margin-bottom:24px; padding:0 4px}
     .dayCard{display:grid; grid-template-columns:70px 1fr; gap:10px; align-items:flex-start; background:transparent; border:1px solid var(--border); padding:12px; border-radius:12px}
-    .dayCard.today{border:2px solid var(--ok); background:rgba(34,197,94,.08)}
+    .dayCard.today{border:1px solid var(--accent); background:rgba(93,215,239,.12)}
     .dayCard.empty{opacity:1}
     .dayHeader{font-weight:700; font-size:13px; color:var(--accent); letter-spacing:.1px; white-space:nowrap}
-    .dayHeader.today{color:var(--ok)}
+    .dayHeader.today{color:var(--accent)}
     .lessonsList{display:flex; flex-direction:column; gap:6px}
     .lessonItem{background:transparent; border:none; border-radius:0; padding:0; font-size:11px; line-height:1.6; color:var(--muted); transition:all .15s ease; cursor:pointer; display:flex; flex-direction:column}
     .lessonItem:hover{background:transparent}
@@ -271,6 +271,54 @@
     .terminyBtn{background:#1a1e27; border:1px solid var(--border); color:var(--text); padding:12px; border-radius:12px; cursor:pointer; font-weight:600; font-size:13px; transition:all .15s ease}
     .terminyBtn:hover{background:#1f2430; border-color:var(--accent)}
     .terminyBtn:active{transform:scale(.98)}
+
+    /* PLAN EDIT POPUPS */
+    .planEditWrap{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.5); z-index:60; overflow-y:auto; padding:16px 12px}
+    .planEditDialog{width:100%; max-width:680px; background:#0f1218; border:1px solid var(--border); border-radius:16px; padding:14px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:12px}
+    #editPlanDaySelector{display:grid; grid-template-columns:1fr 1fr; gap:8px; max-height:56vh; overflow-y:auto; padding-right:2px}
+    .planEditDialog h2{margin:0 0 8px 0; font-size:18px; color:var(--text)}
+    .dayColumnGrid{display:grid; grid-template-columns:1fr; gap:8px; max-height:48vh; overflow-y:auto}
+    .dayColumn{background:#1a1e27; border:1px solid var(--border); border-radius:10px; padding:8px; display:flex; flex-direction:column; gap:6px}
+    .dayColumn h3{margin:0 0 6px 0; font-size:13px; color:var(--accent); font-weight:700}
+    .lessonRow{background:#0f1218; border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; display:grid; grid-template-columns:1fr; gap:5px; font-size:11px}
+    .lessonRow input, .lessonRow select{font-size:11px; padding:6px 8px; height:auto}
+    .lessonRowTime{display:grid; grid-template-columns:1fr 1fr; gap:4px}
+    .lessonRowTime input{font-size:10px}
+    .lessonRowTypeStudent{display:grid; grid-template-columns:50px 1fr; gap:4px}
+    .lessonRowTypeStudent select{font-size:10px}
+    .lessonRowActions{display:grid; grid-template-columns:1fr 1fr; gap:4px}
+    .lessonRowActions button{font-size:9px; padding:3px 6px; height:26px}
+    .addLessonBtn{background:rgba(93,215,239,.15); border:1px dashed var(--accent); color:var(--accent); padding:6px; border-radius:8px; cursor:pointer; font-size:10px; font-weight:600; transition:all .15s ease; margin-top:2px}
+    .addLessonBtn:hover{background:rgba(93,215,239,.25)}
+    
+    /* DAY SELECTOR BUTTONS */
+    .editPlanDayButton{background:#1a1e27; border:1px solid var(--border); color:var(--text); padding:10px 12px; border-radius:10px; cursor:pointer; font-weight:600; font-size:12px; transition:all .15s ease; text-align:center}
+    .editPlanDayButton:hover{background:#1f2430; border-color:var(--accent)}
+    .editPlanDayButton:active{transform:scale(.98)}
+    .editPlanDayButton.today{background:rgba(93,215,239,.12); border:1px solid var(--accent); color:var(--accent)}
+    .editPlanDayButton:last-child{grid-column:1/-1}
+    .planEditFooter{display:flex; gap:8px; justify-content:center; flex-wrap:wrap}
+    .planEditFooter button{padding:8px 14px; border-radius:8px; border:none; cursor:pointer; font-weight:600; font-size:12px; transition:all .15s ease}
+    .planEditFooter .btn{background:#1a1e27; border:1px solid var(--border); color:var(--text)}
+    .planEditFooter .btn:hover{background:#1f2430}
+    .planEditFooter .btn.primary{background:linear-gradient(145deg,#1a2847,#0f1626); color:var(--text); border:none}
+    .planEditFooter .btn.ghost{background:transparent; color:var(--text); border:1px solid var(--border)}
+
+    /* CALENDAR STYLES */
+    .calendarHeader{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px}
+    .calendarNav{width:32px; height:32px; border-radius:8px; border:1px solid var(--border); background:#1a1e27; color:var(--text); cursor:pointer; font-size:18px; font-weight:300; transition:all .15s ease; display:grid; place-items:center; padding:0}
+    .calendarNav:hover{background:#1f2430; border-color:var(--accent)}
+    .calendarNav:active{transform:scale(.95)}
+    .calendarMonthYear{font-weight:700; font-size:14px; color:var(--text); text-align:center; letter-spacing:.3px; min-width:120px}
+    .calendarWeekDays{display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:8px; text-align:center}
+    .calendarWeekDays div{font-size:11px; font-weight:600; color:var(--muted); padding:4px 0}
+    .miniCalendar{display:grid; grid-template-columns:repeat(7,1fr); gap:4px}
+    .miniCalendar button{padding:8px 4px; border-radius:6px; border:1px solid var(--border); background:#1a1e27; color:var(--muted); cursor:pointer; font-size:11px; font-weight:600; transition:all .15s ease; min-height:40px; width:100%; display:flex; align-items:center; justify-content:center}
+    .miniCalendar button:hover{background:#1f2430; border-color:var(--accent)}
+    .miniCalendar button:active{transform:scale(.95)}
+    .miniCalendar button.other-month{opacity:0.25; pointer-events:none}
+    .miniCalendar button.today{border:1px solid var(--accent); color:var(--accent); font-weight:700; background:rgba(93,215,239,.12)}
+    .miniCalendar button.selected{background:linear-gradient(145deg,rgba(93,215,239,.25),rgba(93,215,239,.15)); border-color:var(--accent); color:var(--accent); font-weight:700}
 
     /* SETTINGS MODAL */
     .settings-dialog-wrap{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.5); z-index:50}
@@ -692,6 +740,57 @@
     <div class="label" id="installText">Zainstaluj Tuttorly na ekranie głównym.</div>
     <button id="installBtn" class="action">Zainstaluj</button>
     <div id="installClose" class="close">✕</div>
+  </div>
+
+  <!-- EDIT STATIC PLAN POPUP -->
+  <div class="planEditWrap" id="editPlanWrap">
+    <div class="planEditDialog">
+      <h2>📋 Edytuj stały plan zajęć</h2>
+      
+      <!-- Step 1: Day Selector -->
+      <div id="editPlanStep1">
+        <p style="color:var(--muted); margin:0 0 12px 0; font-size:13px">Krok 1: Wybierz dzień</p>
+        <div id="editPlanDaySelector" style="display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin:12px 0"></div>
+      </div>
+      
+      <!-- Step 2: Edit Lessons -->
+      <div id="editPlanStep2" style="display:none">
+        <p style="color:var(--muted); margin:0 0 12px 0; font-size:13px">Krok 2: Edytuj lekcje</p>
+        <div class="dayColumnGrid" id="editPlanDayContainer"></div>
+      </div>
+      
+      <div class="planEditFooter">
+        <button class="btn ghost" id="editPlanCancel">Anuluj</button>
+        <button class="btn ghost" id="editPlanBack" style="display:none">← Wróć</button>
+        <button class="btn primary" id="editPlanSave" style="display:none">Zapisz</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD TEMP CHANGE POPUP -->
+  <div class="planEditWrap" id="tempChangePlanWrap">
+    <div class="planEditDialog">
+      <h2>➕ Dodaj zmianę na dzień</h2>
+      <div id="tempChangeStep1">
+        <div class="calendarHeader">
+          <button class="calendarNav" id="prevMonthBtn">‹</button>
+          <div class="calendarMonthYear"><span id="calendarMonth"></span> <span id="calendarYear"></span></div>
+          <button class="calendarNav" id="nextMonthBtn">›</button>
+        </div>
+        <div class="calendarWeekDays">
+          <div>Pon</div><div>Wto</div><div>Śro</div><div>Czw</div><div>Pią</div><div>Sob</div><div>Nie</div>
+        </div>
+        <div class="miniCalendar" id="miniCalendar"></div>
+      </div>
+      <div id="tempChangeStep2" style="display:none">
+        <p style="color:var(--muted); margin:0 0 12px 0; font-size:13px">Krok 2: Edytuj plan dla wybranego dnia</p>
+        <div class="dayColumnGrid" id="tempChangeDayContainer"></div>
+      </div>
+      <div class="planEditFooter">
+        <button class="btn ghost" id="tempChangeCancelBtn" data-step1="Anuluj" data-step2="← Wróć">Anuluj</button>
+        <button class="btn primary" id="tempChangeSaveBtn" style="display:none">Zapisz zmianę</button>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -1858,14 +1957,356 @@
     });
   }
 
-  // Event listeners for buttons
-  el('editStaticPlanBtn')?.addEventListener('click', ()=>{
-    console.log('TODO: Edit static plan popup');
+  // ===== EDIT STATIC PLAN FUNCTIONS =====
+  let selectedEditPlanDay = null;
+  
+  function openEditStaticPlanPopup(){
+    const plan = loadStaticPlan();
+    const selector = el('editPlanDaySelector');
+    const today = getTodayFromMonday();
+    if(!selector) return;
+    
+    selectedEditPlanDay = null;
+    selector.innerHTML = '';
+    el('editPlanStep1').style.display = 'block';
+    el('editPlanStep2').style.display = 'none';
+    el('editPlanCancel').style.display = 'block';
+    el('editPlanBack').style.display = 'none';
+    el('editPlanSave').style.display = 'none';
+    
+    plan.forEach(dayData => {
+      const btn = document.createElement('button');
+      btn.className = 'editPlanDayButton';
+      if(dayData.dayNum === today) btn.classList.add('today');
+      btn.innerHTML = `<div>${dayData.day}</div><div style="font-size:12px; color:var(--muted); margin-top:4px">${dayData.lessons.length} lekcji</div>`;
+      btn.onclick = () => editStaticPlanStep2(dayData.dayNum);
+      selector.appendChild(btn);
+    });
+    
+    el('editPlanWrap').style.display = 'flex';
+  }
+  
+  function editStaticPlanStep2(dayNum){
+    const plan = loadStaticPlan();
+    const dayData = plan.find(d => d.dayNum === dayNum);
+    if(!dayData) return;
+    
+    selectedEditPlanDay = dayNum;
+    const container = el('editPlanDayContainer');
+    container.innerHTML = '';
+    
+    const col = document.createElement('div');
+    col.className = 'dayColumn';
+    col.innerHTML = `<h3>${dayData.day}</h3>`;
+    
+    const lessonsList = document.createElement('div');
+    lessonsList.style.display = 'flex';
+    lessonsList.style.flexDirection = 'column';
+    lessonsList.style.gap = '8px';
+    
+    dayData.lessons.forEach(lesson => {
+      const row = createLessonRowHTML(dayData.dayNum, lesson);
+      lessonsList.appendChild(row);
+    });
+    
+    // Add new lesson button
+    const addBtn = document.createElement('button');
+    addBtn.className = 'addLessonBtn';
+    addBtn.textContent = '+ Dodaj lekcję';
+    addBtn.onclick = () => {
+      const newRow = createLessonRowHTML(dayNum, {id: uid(), startTime: '10:00', endTime: '11:00', type: 'ST', student: '', note: ''});
+      lessonsList.insertBefore(newRow, addBtn);
+    };
+    
+    lessonsList.appendChild(addBtn);
+    col.appendChild(lessonsList);
+    container.appendChild(col);
+    
+    el('editPlanStep1').style.display = 'none';
+    el('editPlanStep2').style.display = 'block';
+    el('editPlanCancel').style.display = 'none';
+    el('editPlanBack').style.display = 'block';
+    el('editPlanSave').style.display = 'block';
+  }
+  
+  function goBackToEditPlanStep1(){
+    el('editPlanStep1').style.display = 'block';
+    el('editPlanStep2').style.display = 'none';
+    el('editPlanCancel').style.display = 'block';
+    el('editPlanBack').style.display = 'none';
+    el('editPlanSave').style.display = 'none';
+    selectedEditPlanDay = null;
+  }
+
+  function createLessonRowHTML(dayNum, lesson){
+    const row = document.createElement('div');
+    row.className = 'lessonRow';
+    row.dataset.lessonId = lesson.id;
+    row.dataset.dayNum = dayNum;
+    
+    row.innerHTML = `
+      <div class="lessonRowTime">
+        <input type="time" value="${lesson.startTime}" class="lessonStart" />
+        <input type="time" value="${lesson.endTime}" class="lessonEnd" />
+      </div>
+      <div class="lessonRowTypeStudent">
+        <select class="lessonTypeSelect">
+          <option value="ST" ${lesson.type === 'ST' ? 'selected' : ''}>ST</option>
+          <option value="ZD" ${lesson.type === 'ZD' ? 'selected' : ''}>ZD</option>
+        </select>
+        <input type="text" class="lessonStudentInput" value="${lesson.student}" placeholder="Imię" />
+      </div>
+      <input type="text" class="lessonNoteInput" value="${lesson.note}" placeholder="Notatka" />
+      <div class="lessonRowActions">
+        <button class="btn" onclick="this.parentElement.parentElement.remove()">✕ Usuń</button>
+      </div>
+    `;
+    return row;
+  }
+
+  function saveEditStaticPlan(){
+    if(!selectedEditPlanDay) return;
+    
+    const plan = loadStaticPlan();
+    const dayData = plan.find(d => d.dayNum === selectedEditPlanDay);
+    if(!dayData) return;
+    
+    const container = el('editPlanDayContainer');
+    dayData.lessons = [];
+    const rows = container.querySelectorAll('.lessonRow');
+    
+    rows.forEach(row => {
+      const startTime = row.querySelector('.lessonStart').value;
+      const endTime = row.querySelector('.lessonEnd').value;
+      const type = row.querySelector('.lessonTypeSelect').value;
+      const student = row.querySelector('.lessonStudentInput').value;
+      const note = row.querySelector('.lessonNoteInput').value;
+      
+      if(student.trim()){
+        dayData.lessons.push({
+          id: row.dataset.lessonId,
+          startTime,
+          endTime,
+          type,
+          student,
+          note
+        });
+      }
+    });
+    
+    // Sort by time
+    dayData.lessons.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    
+    localStorage.setItem(staticPlanKey, JSON.stringify(plan));
+    el('editPlanWrap').style.display = 'none';
+    selectedEditPlanDay = null;
+    renderWeek();
+  }
+
+  // Close edit plan popup
+  el('editPlanCancel')?.addEventListener('click', () => {
+    el('editPlanWrap').style.display = 'none';
+    selectedEditPlanDay = null;
   });
 
-  el('addTempChangeBtn')?.addEventListener('click', ()=>{
-    console.log('TODO: Add temporary change popup');
+  el('editPlanBack')?.addEventListener('click', goBackToEditPlanStep1);
+
+  el('editPlanSave')?.addEventListener('click', () => {
+    saveEditStaticPlan();
   });
+
+  // ===== ADD TEMP CHANGE FUNCTIONS =====
+  let selectedTempChangeDate = null;
+  let calendarDisplayMonth = new Date().getMonth();
+  let calendarDisplayYear = new Date().getFullYear();
+
+  function renderTempChangeCalendar(year, month){
+    const monthNames = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+    el('calendarMonth').textContent = monthNames[month];
+    el('calendarYear').textContent = year;
+    
+    const container = el('miniCalendar');
+    container.innerHTML = '';
+    const today = new Date();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    const offset = (firstDay.getDay() - 1 + 7) % 7;
+    startDate.setDate(startDate.getDate() - offset);
+    
+    for(let i = 0; i < 42; i++){
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
+      
+      const btn = document.createElement('button');
+      btn.textContent = date.getDate();
+      
+      if(date.getMonth() !== month) btn.classList.add('other-month');
+      if(date.toDateString() === today.toDateString()) btn.classList.add('today');
+      if(selectedTempChangeDate && date.toDateString() === selectedTempChangeDate.toDateString()) btn.classList.add('selected');
+      
+      btn.onclick = () => {
+        selectedTempChangeDate = new Date(date);
+        renderTempChangeCalendar(year, month);
+        showTempChangeStep2(selectedTempChangeDate);
+      };
+      
+      container.appendChild(btn);
+    }
+  }
+
+  function openAddTempChangePopup(){
+    selectedTempChangeDate = null;
+    calendarDisplayMonth = new Date().getMonth();
+    calendarDisplayYear = new Date().getFullYear();
+    
+    el('tempChangeStep1').style.display = 'block';
+    el('tempChangeStep2').style.display = 'none';
+    el('tempChangeSaveBtn').style.display = 'none';
+    
+    renderTempChangeCalendar(calendarDisplayYear, calendarDisplayMonth);
+    el('tempChangePlanWrap').style.display = 'flex';
+  }
+
+  function showTempChangeStep2(date){
+    const step1 = el('tempChangeStep1');
+    const step2 = el('tempChangeStep2');
+    const dayNum = date.getDay() === 0 ? 7 : date.getDay();
+    const staticPlan = loadStaticPlan();
+    const dayData = staticPlan.find(d => d.dayNum === dayNum);
+    const tempChanges = loadTempChanges();
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const existingChange = tempChanges.find(tc => tc.date === dateStr);
+    
+    const container = el('tempChangeDayContainer');
+    container.innerHTML = '';
+    
+    if(!dayData) return;
+    
+    const col = document.createElement('div');
+    col.className = 'dayColumn';
+    col.innerHTML = `<h3>${dayData.day} (${dateStr})</h3>`;
+    
+    const lessonsList = document.createElement('div');
+    lessonsList.style.display = 'flex';
+    lessonsList.style.flexDirection = 'column';
+    lessonsList.style.gap = '8px';
+    
+    const lessonsToEdit = existingChange?.lessons || dayData.lessons;
+    lessonsToEdit.forEach(lesson => {
+      const row = createLessonRowHTML(dayNum, lesson);
+      lessonsList.appendChild(row);
+    });
+    
+    const addBtn = document.createElement('button');
+    addBtn.className = 'addLessonBtn';
+    addBtn.textContent = '+ Dodaj lekcję';
+    addBtn.onclick = () => {
+      const newRow = createLessonRowHTML(dayNum, {id: uid(), startTime: '10:00', endTime: '11:00', type: 'ST', student: '', note: ''});
+      lessonsList.insertBefore(newRow, addBtn);
+    };
+    
+    lessonsList.appendChild(addBtn);
+    col.appendChild(lessonsList);
+    container.appendChild(col);
+    
+    step1.style.display = 'none';
+    step2.style.display = 'block';
+    el('tempChangeSaveBtn').style.display = 'block';
+    el('tempChangeCancelBtn').textContent = el('tempChangeCancelBtn').dataset.step2;
+  }
+
+  function backToTempChangeCalendar(){
+    el('tempChangeStep1').style.display = 'block';
+    el('tempChangeStep2').style.display = 'none';
+    el('tempChangeSaveBtn').style.display = 'none';
+    el('tempChangeCancelBtn').textContent = el('tempChangeCancelBtn').dataset.step1;
+  }
+
+  function saveTempChange(){
+    if(!selectedTempChangeDate) return;
+    
+    const dayNum = selectedTempChangeDate.getDay() === 0 ? 7 : selectedTempChangeDate.getDay();
+    const dateStr = `${selectedTempChangeDate.getFullYear()}-${String(selectedTempChangeDate.getMonth() + 1).padStart(2, '0')}-${String(selectedTempChangeDate.getDate()).padStart(2, '0')}`;
+    const container = el('tempChangeDayContainer');
+    
+    const lessons = [];
+    const rows = container.querySelectorAll('.lessonRow');
+    
+    rows.forEach(row => {
+      const startTime = row.querySelector('.lessonStart').value;
+      const endTime = row.querySelector('.lessonEnd').value;
+      const type = row.querySelector('.lessonTypeSelect').value;
+      const student = row.querySelector('.lessonStudentInput').value;
+      const note = row.querySelector('.lessonNoteInput').value;
+      
+      if(student.trim()){
+        lessons.push({
+          id: row.dataset.lessonId,
+          startTime,
+          endTime,
+          type,
+          student,
+          note
+        });
+      }
+    });
+    
+    lessons.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    
+    const tempChanges = loadTempChanges();
+    const idx = tempChanges.findIndex(tc => tc.date === dateStr);
+    
+    if(idx >= 0) tempChanges[idx] = {date: dateStr, lessons};
+    else tempChanges.push({date: dateStr, lessons});
+    
+    localStorage.setItem(tempChangesKey, JSON.stringify(tempChanges));
+    el('tempChangePlanWrap').style.display = 'none';
+    renderWeek();
+  }
+
+  el('tempChangeCancelBtn')?.addEventListener('click', () => {
+    if(el('tempChangeStep2').style.display === 'block'){
+      backToTempChangeCalendar();
+    }else{
+      el('tempChangePlanWrap').style.display = 'none';
+    }
+  });
+
+  el('tempChangeSaveBtn')?.addEventListener('click', () => {
+    saveTempChange();
+  });
+
+  el('prevMonthBtn')?.addEventListener('click', () => {
+    calendarDisplayMonth--;
+    if(calendarDisplayMonth < 0){
+      calendarDisplayMonth = 11;
+      calendarDisplayYear--;
+    }
+    renderTempChangeCalendar(calendarDisplayYear, calendarDisplayMonth);
+  });
+
+  el('nextMonthBtn')?.addEventListener('click', () => {
+    calendarDisplayMonth++;
+    if(calendarDisplayMonth > 11){
+      calendarDisplayMonth = 0;
+      calendarDisplayYear++;
+    }
+    renderTempChangeCalendar(calendarDisplayYear, calendarDisplayMonth);
+  });
+
+  // Close popups on background click
+  el('editPlanWrap')?.addEventListener('click', (e) => {
+    if(e.target === el('editPlanWrap')) el('editPlanWrap').style.display = 'none';
+  });
+
+  el('tempChangePlanWrap')?.addEventListener('click', (e) => {
+    if(e.target === el('tempChangePlanWrap')) el('tempChangePlanWrap').style.display = 'none';
+  });
+
+  // Event listeners for buttons
+  el('editStaticPlanBtn')?.addEventListener('click', openEditStaticPlanPopup);
+  el('addTempChangeBtn')?.addEventListener('click', openAddTempChangePopup);
 
   // Render week when switching to terminy tab
   el('terminyTab')?.addEventListener('click', ()=>{
