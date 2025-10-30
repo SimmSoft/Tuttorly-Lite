@@ -70,7 +70,8 @@
     .notch{position:absolute; top:10px; left:50%; transform:translateX(-50%);
       width:140px; height:22px; background:#0c0d11; border-radius:0 0 14px 14px; border:1px solid var(--border);}    
     .screen{flex:1; background:linear-gradient(180deg,#0f1117, #0c0e12 60%);
-      border-radius:28px; padding:16px; overflow:auto; display:flex; flex-direction:column; border:1px solid var(--border); scroll-behavior:smooth;}
+      border-radius:28px; padding:16px; overflow:auto; display:flex; flex-direction:column; border:1px solid var(--border); scroll-behavior:smooth; scrollbar-width:none;}
+    .screen::-webkit-scrollbar{display:none}
 
     /* APP CHROME */
     .appbar{display:flex; align-items:center; gap:10px; padding:2px 6px 6px 6px; justify-content:space-between}
@@ -246,6 +247,31 @@
     .goTodayBtn{width:100%; padding:10px 12px; background:#1a1e27; border:1px solid var(--border); color:var(--text); border-radius:10px; cursor:pointer; transition:all .15s ease; font-weight:600; font-size:13px}
     .goTodayBtn:hover{background:#1f2430}
 
+    /* TERMINY VIEW */
+    .weekContainer{display:flex; flex-direction:column; gap:0; margin-bottom:24px; padding:0 4px}
+    .dayCard{display:grid; grid-template-columns:70px 1fr; gap:10px; align-items:flex-start; background:transparent; border:1px solid var(--border); padding:12px; border-radius:12px}
+    .dayCard.today{border:2px solid var(--ok); background:rgba(34,197,94,.08)}
+    .dayCard.empty{opacity:1}
+    .dayHeader{font-weight:700; font-size:13px; color:var(--accent); letter-spacing:.1px; white-space:nowrap}
+    .dayHeader.today{color:var(--ok)}
+    .lessonsList{display:flex; flex-direction:column; gap:6px}
+    .lessonItem{background:transparent; border:none; border-radius:0; padding:0; font-size:11px; line-height:1.6; color:var(--muted); transition:all .15s ease; cursor:pointer; display:flex; flex-direction:column}
+    .lessonItem:hover{background:transparent}
+    .lessonItem > div:first-child{display:flex; align-items:center; gap:10px; margin-bottom:3px}
+    .lessonTime{color:var(--text); font-weight:600; font-size:11px}
+    .lessonTypeAndStudent{display:flex; align-items:center; gap:6px}
+    .lessonType{display:inline-block; padding:1px 5px; border-radius:3px; font-size:9px; font-weight:700; flex-shrink:0}
+    .lessonType.st{background:rgba(139,92,246,.25); color:#b085f5}
+    .lessonType.zd{background:rgba(110,231,255,.25); color:#6ee7ff}
+    .lessonStudent{color:var(--text); font-weight:600; font-size:11px}
+    .lessonNote{color:var(--muted); font-size:10px; margin-top:2px; font-style:italic; word-wrap:break-word; word-break:break-word; white-space:pre-wrap; text-align:left}
+    .emptyLessonMsg{color:var(--muted); font-size:11px}
+
+    .terminyActions{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px}
+    .terminyBtn{background:#1a1e27; border:1px solid var(--border); color:var(--text); padding:12px; border-radius:12px; cursor:pointer; font-weight:600; font-size:13px; transition:all .15s ease}
+    .terminyBtn:hover{background:#1f2430; border-color:var(--accent)}
+    .terminyBtn:active{transform:scale(.98)}
+
     /* SETTINGS MODAL */
     .settings-dialog-wrap{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.5); z-index:50}
     .settings-dialog{width:520px; max-width:92vw; background:#0f1218; border:1px solid var(--border); border-radius:18px; padding:20px; box-shadow:var(--shadow); max-height:90vh; overflow:auto}
@@ -299,6 +325,12 @@
     .annualCard .summaryLabel{font-size:11px; color:var(--muted); font-weight:500; margin-bottom:6px; letter-spacing:.3px}
     .annualCard .summaryAmount{font-weight:800; font-size:14px; color:var(--accent); letter-spacing:-.4px}
 
+    @media (max-width:600px){
+      .weekContainer{gap:6px; padding:0 2px}
+      .dayCard{grid-template-columns:65px 1fr; gap:8px; padding:10px}
+      .dayHeader{font-size:12px; padding:2px 0}
+      .lessonItem{font-size:10px; padding:6px 8px}
+    }
     @media (max-width:440px){ .phone{width:100%; height:calc(100vh - 48px)} }
     
     /* --- Display-Mode (installed PWA) --- */
@@ -336,9 +368,6 @@
     <div class="screen">
       <div class="appbar">
         <div class="appbar-left">
-          <div class="iconbtn ghost" id="calendarBtn" title="Kalendarz">
-            <svg viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5a3 3 0 0 0-3 3v16a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V6a3 3 0 0 0-3-3zm0 18H5V9h14z" fill="currentColor"/></svg>
-          </div>
         </div>
         <div class="appbar-center">
           <div class="title">Tuttorly</div>
@@ -353,8 +382,22 @@
 
       <!-- NAVIGATION TABS -->
       <div class="tabs">
+        <div class="tab" id="terminyTab" data-view="terminy">Terminy</div>
         <div class="tab active" id="studentsTab" data-view="students">Uczniowie</div>
         <div class="tab" id="statsTab" data-view="stats">Statystyki</div>
+      </div>
+
+      <!-- CALENDAR VIEW -->
+      <div class="view" id="terminyView">
+        <!-- Week Schedule -->
+        <h3 style="color:var(--text); font-weight:700; margin:12px 0 16px; letter-spacing:.2px; font-size:16px; text-align:center">Plan zajęć</h3>
+        <div class="weekContainer" id="weekContainer"></div>
+        
+        <!-- Action Buttons -->
+        <div class="terminyActions">
+          <button class="terminyBtn" id="editStaticPlanBtn">📋 Edytuj plan stały</button>
+          <button class="terminyBtn" id="addTempChangeBtn">➕ Dodaj zmianę</button>
+        </div>
       </div>
 
       <!-- STUDENTS VIEW -->
@@ -704,6 +747,8 @@
       if(fab) fab.classList.add('dark');
       renderStats();
       renderEarnings();
+    } else if(tabName === 'terminy'){
+      if(fab) fab.classList.add('dark');
     } else {
       if(fab) fab.classList.remove('dark');
     }
@@ -712,6 +757,7 @@
   }
 
   // Tab click handlers
+  el('terminyTab')?.addEventListener('click', ()=>{ switchTab('terminy'); });
   el('studentsTab')?.addEventListener('click', ()=>{ switchTab('students'); });
   el('statsTab')?.addEventListener('click', ()=>{ switchTab('stats'); });
 
@@ -721,10 +767,12 @@
   const SWIPE_TIME_THRESHOLD = 300; // milliseconds
 
   function handleSwipe(direction){
-    if(direction === 'left' && currentView === 'students'){
-      switchTab('stats');
-    } else if(direction === 'right' && currentView === 'stats'){
-      switchTab('students');
+    if(direction === 'left'){
+      if(currentView === 'terminy') switchTab('students');
+      else if(currentView === 'students') switchTab('stats');
+    } else if(direction === 'right'){
+      if(currentView === 'stats') switchTab('students');
+      else if(currentView === 'students') switchTab('terminy');
     }
   }
 
@@ -1678,6 +1726,156 @@
     window.addEventListener('appinstalled', ()=>{ const bar=BAR(); if(bar) bar.style.display='none'; localStorage.removeItem('a2hs.dismissed'); });
     window.addEventListener('load', ()=>{ const isiOS=/iPhone|iPad|iPod/i.test(navigator.userAgent); if(isiOS && isMobile() && !isStandalone()) showBarIOS(); });
   })();
+
+  // ===== TERMINY VIEW =====
+  const staticPlanKey = 'tuttorly.staticPlan';
+  const tempChangesKey = 'tuttorly.tempChanges';
+
+  // Default static plan data
+  const defaultStaticPlan = [
+    {
+      day: 'Poniedziałek',
+      dayNum: 1,
+      lessons: [
+        { id: 'p001', startTime: '15:45', endTime: '17:00', type: 'ZD', student: 'Jakub', note: 'Englilanka' },
+        { id: 'p002', startTime: '17:15', endTime: '18:30', type: 'ZD', student: 'Natalia', note: 'Przyspieszony' }
+      ]
+    },
+    { day: 'Wtorek', dayNum: 2, lessons: [] },
+    { day: 'Środa', dayNum: 3, lessons: [] },
+    {
+      day: 'Czwartek',
+      dayNum: 4,
+      lessons: [
+        { id: 'c001', startTime: '16:00', endTime: '17:30', type: 'ST', student: 'Radek', note: 'Matematyka' },
+        { id: 'c002', startTime: '17:45', endTime: '19:00', type: 'ST', student: 'RADEK', note: '' }
+      ]
+    },
+    {
+      day: 'Piątek',
+      dayNum: 5,
+      lessons: [
+        { id: 'f001', startTime: '15:00', endTime: '16:00', type: 'ST', student: 'Ursuszek', note: 'Retorowana 4/6' },
+        { id: 'f002', startTime: '16:30', endTime: '17:45', type: 'ST', student: 'Cecylia', note: 'Przydzielana 33 Lila 4/13dasdasdasdasdasdasdasdasdasdasdasdsssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss' },
+        { id: 'f003', startTime: '17:45', endTime: '19:00', type: 'ZD', student: 'Amelia', note: '' }
+      ]
+    },
+    { day: 'Sobota', dayNum: 6, lessons: [] },
+    {
+      day: 'Niedziela',
+      dayNum: 7,
+      lessons: [
+        { id: 'n001', startTime: '10:00', endTime: '11:30', type: 'ST', student: 'Moda Alicja', note: '' }
+      ]
+    }
+  ];
+
+  function loadStaticPlan(){
+    const stored = localStorage.getItem(staticPlanKey);
+    if(stored){
+      try{ return JSON.parse(stored); }catch{}
+    }
+    return defaultStaticPlan;
+  }
+
+  function loadTempChanges(){
+    const stored = localStorage.getItem(tempChangesKey);
+    if(stored){
+      try{ return JSON.parse(stored); }catch{}
+    }
+    return [];
+  }
+
+  function getToday(){
+    const today = new Date();
+    return today.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+  }
+
+  function getTodayFromMonday(){
+    // Convert JS day (0=Sun) to Polish week (1=Mon)
+    const jsDay = getToday();
+    return jsDay === 0 ? 7 : jsDay; // Convert Sunday (0) to 7
+  }
+
+  function renderWeek(){
+    const container = el('weekContainer');
+    if(!container) return;
+    
+    const staticPlan = loadStaticPlan();
+    const tempChanges = loadTempChanges();
+    const today = getTodayFromMonday();
+    
+    container.innerHTML = '';
+
+    staticPlan.forEach(dayData => {
+      const dayCard = document.createElement('div');
+      dayCard.className = 'dayCard';
+      if(dayData.dayNum === today) dayCard.classList.add('today');
+      if(dayData.lessons.length === 0) dayCard.classList.add('empty');
+
+      // Find temp changes for this day
+      const tempChange = tempChanges.find(tc => {
+        const tcDate = new Date(tc.date);
+        const tcDayNum = tcDate.getDay() === 0 ? 7 : tcDate.getDay();
+        return tcDayNum === dayData.dayNum;
+      });
+
+      const lessonsToShow = tempChange?.lessons || dayData.lessons;
+
+      const dayHeader = document.createElement('div');
+      dayHeader.className = 'dayHeader';
+      if(dayData.dayNum === today) dayHeader.classList.add('today');
+      dayHeader.textContent = dayData.day.substring(0, 3).toUpperCase();
+      dayCard.appendChild(dayHeader);
+
+      const lessonsList = document.createElement('div');
+      lessonsList.className = 'lessonsList';
+
+      if(lessonsToShow.length === 0){
+        const emptyMsg = document.createElement('div');
+        emptyMsg.className = 'emptyLessonMsg';
+        emptyMsg.textContent = 'Brak zajęć';
+        lessonsList.appendChild(emptyMsg);
+      } else {
+        lessonsToShow.forEach(lesson => {
+          const item = document.createElement('div');
+          item.className = 'lessonItem';
+
+          let html = `<div><div class="lessonTime">${lesson.startTime}–${lesson.endTime}</div>`;
+          html += `<div class="lessonTypeAndStudent">`;
+          html += `<span class="lessonType ${lesson.type.toLowerCase()}">${lesson.type}</span>`;
+          html += `<span class="lessonStudent">${lesson.student}</span>`;
+          html += `</div></div>`;
+          if(lesson.note) html += `<div class="lessonNote">${lesson.note}</div>`;
+
+          item.innerHTML = html;
+          lessonsList.appendChild(item);
+        });
+      }
+
+      dayCard.appendChild(lessonsList);
+      container.appendChild(dayCard);
+    });
+  }
+
+  // Event listeners for buttons
+  el('editStaticPlanBtn')?.addEventListener('click', ()=>{
+    console.log('TODO: Edit static plan popup');
+  });
+
+  el('addTempChangeBtn')?.addEventListener('click', ()=>{
+    console.log('TODO: Add temporary change popup');
+  });
+
+  // Render week when switching to terminy tab
+  el('terminyTab')?.addEventListener('click', ()=>{
+    setTimeout(()=>{ renderWeek(); }, 50);
+  });
+
+  // Initial render on load if terminy is visible
+  if(currentView === 'students'){
+    setTimeout(()=>{ renderWeek(); }, 100);
+  }
   </script>
 </body>
 </html>
