@@ -299,7 +299,7 @@
     .planEditDialog{width:100%; max-width:680px; background:#0f1218; border:1px solid var(--border); border-radius:16px; padding:14px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:12px}
     #editPlanDaySelector{display:grid; grid-template-columns:1fr 1fr; gap:8px; max-height:56vh; overflow-y:auto; padding-right:2px}
     .planEditDialog h2{margin:0 0 8px 0; font-size:18px; color:var(--text)}
-    .dayColumnGrid{display:grid; grid-template-columns:1fr; gap:8px; max-height:48vh; overflow-y:auto}
+    .dayColumnGrid{display:grid; grid-template-columns:1fr; gap:8px; max-height:auto; overflow-y:auto}
     .dayColumn{background:#1a1e27; border:1px solid var(--border); border-radius:10px; padding:8px; display:flex; flex-direction:column; gap:6px}
     .dayColumn h3{margin:0 0 6px 0; font-size:13px; color:var(--accent); font-weight:700}
     .lessonRow{background:#0f1218; border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; display:grid; grid-template-columns:1fr; gap:5px; font-size:11px}
@@ -1787,7 +1787,25 @@
 
   // Handle browser back button and system back button
   function handleBackButton(){
-    // Priority 1: Close any open dialogs/modals
+    // Priority 1: Close day popup from calendar
+    const dayPopups = document.querySelectorAll('.dialog-wrap');
+    if(dayPopups.length > 0){
+      dayPopups[dayPopups.length - 1].remove();
+      return;
+    }
+
+    // Priority 1.5: Close calendar/schedule edit popups
+    if(el('tempChangePlanWrap') && el('tempChangePlanWrap').style.display === 'flex'){
+      el('tempChangePlanWrap').style.display = 'none';
+      tempChangeFromDayPopup = false;
+      return;
+    }
+    if(el('planEditWrap') && el('planEditWrap').style.display === 'flex'){
+      el('planEditWrap').style.display = 'none';
+      return;
+    }
+
+    // Priority 2: Close any open dialogs/modals
     if(el('settingsDialogWrap') && el('settingsDialogWrap').style.display === 'flex'){
       closeSettingsDialog();
       return;
@@ -1809,7 +1827,7 @@
       return;
     }
 
-    // Priority 2: If in detail view, go back to list
+    // Priority 3: If in detail view, go back to list
     if(el('detailView') && el('detailView').style.display === 'flex'){
       setView('list');
       currentId = null;
@@ -1817,13 +1835,13 @@
       return;
     }
 
-    // Priority 3: If in stats tab, go back to students
+    // Priority 4: If in stats tab, go back to students
     if(currentView === 'stats'){
       switchTab('students');
       return;
     }
 
-    // Priority 4: In students view - browser back button works normally
+    // Priority 5: In students view - browser back button works normally
     // (allow normal back navigation or exit)
   }
 
@@ -2165,8 +2183,13 @@
     const dialog = document.createElement('div');
     dialog.className = 'dialog';
     
-    let html = `<h3>${dayNames[jsDay]} ${dayNum} ${MONTHS_PL[month]}</h3>`;
-    html += `<p style="color:var(--muted); font-size:12px; margin:8px 0 12px">${tempChange ? '⚙️ Zmiana tymczasowa' : 'Plan stały'}</p>`;
+    let html = `<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px">`;
+    html += `<div><h3 style="margin:0 0 4px 0">${dayNames[jsDay]} ${dayNum} ${MONTHS_PL[month]}</h3>`;
+    html += `<p style="color:var(--muted); font-size:12px; margin:0">${tempChange ? '⚙️ Zmiana tymczasowa' : 'Plan stały'}</p></div>`;
+    if(tempChange){
+      html += `<button class="btn ghost" style="position:relative; min-width:120px; padding:6px 12px; white-space:nowrap; flex-shrink:0" onclick="removeTempChange('${dateStr}'); this.closest('.dialog-wrap').remove()">↺ Przywróć</button>`;
+    }
+    html += `</div>`;
     
     if(lessons.length === 0){
       html += `<p style="color:var(--muted); text-align:center">Brak zajęć</p>`;
@@ -2190,9 +2213,6 @@
     
     html += `<div class="footer" style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap">`;
     html += `<button class="btn ghost" onclick="this.closest('.dialog-wrap').remove()">Zamknij</button>`;
-    if(tempChange){
-      html += `<button class="btn ghost" onclick="removeTempChange('${dateStr}'); this.closest('.dialog-wrap').remove()">↺ Przywróć plan</button>`;
-    }
     html += `<button class="btn primary" onclick="this.closest('.dialog-wrap').remove(); openTempChangeForDate('${dateStr}')">⚙ Zmiana</button>`;
     html += `</div>`;
     
