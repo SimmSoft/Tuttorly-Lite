@@ -272,6 +272,28 @@
     .terminyBtn:hover{background:#1f2430; border-color:var(--accent)}
     .terminyBtn:active{transform:scale(.98)}
 
+    /* MONTHLY CALENDAR */
+    .monthCalendarWrap{background:#151821; border:1px solid var(--border); border-radius:14px; padding:12px; margin-top:20px}
+    .monthHeader{display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:10px}
+    .monthNavBtn{width:32px; height:32px; border-radius:8px; border:1px solid var(--border); background:#1a1e27; color:var(--text); cursor:pointer; font-size:18px; transition:all .15s ease; display:flex; align-items:center; justify-content:center}
+    .monthNavBtn:hover{background:#1f2430; border-color:var(--accent)}
+    .monthTitle{flex:1; text-align:center; font-weight:800; font-size:16px; color:var(--text); text-transform:capitalize}
+    .weekDaysHeader{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:8px; text-align:center}
+    .dayHeader{color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.5px; padding:6px 0}
+    .monthGrid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px}
+    .dayCell{background:#1a1e27; border:1px solid var(--border); border-radius:10px; padding:8px 6px; text-align:center; cursor:pointer; aspect-ratio:1; display:flex; flex-direction:column; position:relative; transition:all .15s ease; justify-content:space-between}
+    .dayCell:hover{background:#1f2430; border-color:var(--accent)}
+    .dayCell.otherMonth{opacity:.3; cursor:default}
+    .dayCell.otherMonth:hover{background:#1a1e27; border-color:var(--border)}
+    .dayCell.hasChange::before{content:'⚙'; position:absolute; top:2px; right:4px; font-weight:800; color:#fff; font-size:12px; text-shadow: 0 0 8px rgba(93,215,239,.6), 0 0 16px rgba(139,92,246,.4)}
+    .dayCellNumber{font-weight:700; color:var(--text); font-size:13px; margin-bottom:2px}
+    .dayCellNumber.weekend{color:#ef4444}
+    .dayCellIndicators{display:grid; gap:1px; width:100%; position:relative; height:auto; place-items:center}
+    
+    /* Lesson bar - single bar with color segments */
+    .lessonBar{width:100%; height:6px; border-radius:3px; background:var(--accent); background-size:100%; box-shadow: inset 0 0 4px rgba(0,0,0,.3)}
+    .lessonMoreBadge{position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); font-size:8px; color:#fff; font-weight:700; z-index:10; pointer-events:none}
+
     /* PLAN EDIT POPUPS */
     .planEditWrap{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.5); z-index:60; overflow-y:auto; padding:16px 12px}
     .planEditDialog{width:100%; max-width:680px; background:#0f1218; border:1px solid var(--border); border-radius:16px; padding:14px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:12px}
@@ -445,6 +467,25 @@
         <div class="terminyActions">
           <button class="terminyBtn" id="editStaticPlanBtn">📋 Edytuj plan stały</button>
           <button class="terminyBtn" id="addTempChangeBtn">➕ Dodaj zmianę</button>
+        </div>
+
+        <!-- Monthly Calendar -->
+        <div class="monthCalendarWrap">
+          <div class="monthHeader">
+            <button class="monthNavBtn" id="prevMonthCal">‹</button>
+            <div class="monthTitle" id="monthTitleCal">2025 Paź</div>
+            <button class="monthNavBtn" id="nextMonthCal">›</button>
+          </div>
+          <div class="weekDaysHeader">
+            <div class="dayHeader">PON.</div>
+            <div class="dayHeader">WT.</div>
+            <div class="dayHeader">ŚR.</div>
+            <div class="dayHeader">CZW.</div>
+            <div class="dayHeader">PT.</div>
+            <div class="dayHeader">SOB.</div>
+            <div class="dayHeader">NIEDZ.</div>
+          </div>
+          <div class="monthGrid" id="monthGrid"></div>
         </div>
       </div>
 
@@ -1957,6 +1998,237 @@
     });
   }
 
+  // ===== MONTHLY CALENDAR STATE =====
+  let monthCalendarState = {
+    year: new Date().getFullYear(),
+    month: new Date().getMonth()
+  };
+
+  const MONTHS_PL = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'];
+  const DAYS_SHORT = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'];
+
+  function renderMonthCalendar(){
+    const year = monthCalendarState.year;
+    const month = monthCalendarState.month;
+    
+    // Update title
+    el('monthTitleCal').textContent = `${year} ${MONTHS_PL[month].substring(0, 3).toUpperCase()}`;
+    
+    const staticPlan = loadStaticPlan();
+    const tempChanges = loadTempChanges();
+    const monthGrid = el('monthGrid');
+    monthGrid.innerHTML = '';
+    
+    const firstDay = new Date(year, month, 1).getDay(); // 0=Sun, 1=Mon, etc.
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    
+    const startDate = firstDay === 0 ? daysInPrevMonth - 6 : firstDay - 1;
+    
+    let dayCounter = 1;
+    let prevMonthDays = daysInPrevMonth - startDate + 1;
+    let nextMonthDay = 1;
+    
+    for(let i = 0; i < 42; i++){
+      let currentDate = null;
+      let isCurrentMonth = false;
+      let dayNum = 0;
+      
+      if(i < startDate){
+        dayNum = prevMonthDays;
+        prevMonthDays++;
+      } else if(dayCounter <= daysInMonth){
+        dayNum = dayCounter;
+        isCurrentMonth = true;
+        currentDate = new Date(year, month, dayCounter);
+        dayCounter++;
+      } else {
+        dayNum = nextMonthDay;
+        nextMonthDay++;
+      }
+      
+      const cell = document.createElement('div');
+      cell.className = 'dayCell';
+      if(!isCurrentMonth) cell.classList.add('otherMonth');
+      
+      if(isCurrentMonth){
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+        
+        // Check for temp changes
+        const hasChange = tempChanges.some(tc => tc.date === dateStr);
+        if(hasChange) cell.classList.add('hasChange');
+        
+        // Add click handler for current month days
+        cell.addEventListener('click', () => showDayPopup(dateStr, dayNum, month, year));
+      }
+      
+      const dayNumber = document.createElement('div');
+      dayNumber.className = 'dayCellNumber';
+      if(isCurrentMonth && currentDate.getDay() === 0) dayNumber.classList.add('weekend');
+      if(isCurrentMonth && currentDate.getDay() === 6) dayNumber.classList.add('weekend');
+      dayNumber.textContent = dayNum;
+      cell.appendChild(dayNumber);
+      
+      // Add lesson indicators for current month
+      if(isCurrentMonth){
+        // Find the day of week for this date
+        const jsDay = currentDate.getDay(); // 0=Sun, 1=Mon, etc.
+        const dayOfWeek = jsDay === 0 ? 7 : jsDay;
+        
+        // Find corresponding static plan day
+        const planDay = staticPlan.find(d => d.dayNum === dayOfWeek);
+        
+        // Check for temp changes
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+        const tempChange = tempChanges.find(tc => tc.date === dateStr);
+        
+        // Get actual lessons (temp changes take priority)
+        const lessons = tempChange?.lessons || planDay?.lessons || [];
+        
+        if(lessons.length > 0){
+          const indicators = document.createElement('div');
+          indicators.className = 'dayCellIndicators';
+          
+          // Create single bar with color segments
+          const bar = document.createElement('div');
+          bar.className = 'lessonBar';
+          
+          // Build gradient with segments for each lesson
+          const colors = [];
+          const lessonCount = Math.min(lessons.length, 8);
+          for(let j = 0; j < lessonCount; j++){
+            const lesson = lessons[j];
+            const color = lesson.type === 'ZD' ? 'var(--accent)' : 'var(--accent-2)';
+            colors.push(color);
+          }
+          
+          // Create linear gradient with equal segments and thin separator lines
+          const separatorWidth = 1.5; // percentage points for white separator
+          const gradientStops = [];
+          
+          colors.forEach((color, i) => {
+            const start = (i / colors.length) * 100;
+            const end = ((i + 1) / colors.length) * 100;
+            const adjustedEnd = end - (i < colors.length - 1 ? separatorWidth : 0);
+            
+            gradientStops.push(`${color} ${start}% ${adjustedEnd}%`);
+            
+            // Add separator line between segments (dark gray)
+            if(i < colors.length - 1){
+              gradientStops.push(`rgba(80,85,95,.8) ${adjustedEnd}% ${end}%`);
+            }
+          });
+          
+          bar.style.background = `linear-gradient(90deg, ${gradientStops.join(', ')})`;
+          indicators.appendChild(bar);
+          
+          // Add "+X" badge if more lessons
+          if(lessons.length > 8){
+            const more = document.createElement('div');
+            more.className = 'lessonMoreBadge';
+            more.textContent = `+${lessons.length - 8}`;
+            indicators.appendChild(more);
+          }
+          
+          cell.appendChild(indicators);
+        }
+      }
+      
+      monthGrid.appendChild(cell);
+    }
+  }
+  
+  function showDayPopup(dateStr, dayNum, month, year){
+    const date = new Date(year, month, dayNum);
+    const staticPlan = loadStaticPlan();
+    const tempChanges = loadTempChanges();
+    
+    // Find day of week
+    const jsDay = date.getDay();
+    const dayOfWeek = jsDay === 0 ? 7 : jsDay;
+    const dayNames = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+    
+    // Get plan for this day
+    const planDay = staticPlan.find(d => d.dayNum === dayOfWeek);
+    const tempChange = tempChanges.find(tc => tc.date === dateStr);
+    const lessons = tempChange?.lessons || planDay?.lessons || [];
+    
+    // Create popup
+    const popup = document.createElement('div');
+    popup.className = 'dialog-wrap';
+    popup.style.display = 'flex';
+    
+    const dialog = document.createElement('div');
+    dialog.className = 'dialog';
+    
+    let html = `<h3>${dayNames[jsDay]} ${dayNum} ${MONTHS_PL[month]}</h3>`;
+    html += `<p style="color:var(--muted); font-size:12px; margin:8px 0 12px">${tempChange ? '⚙️ Zmiana tymczasowa' : 'Plan stały'}</p>`;
+    
+    if(lessons.length === 0){
+      html += `<p style="color:var(--muted); text-align:center">Brak zajęć</p>`;
+    } else {
+      html += `<div style="display:flex; flex-direction:column; gap:8px">`;
+      lessons.forEach(lesson => {
+        const isZD = lesson.type === 'ZD';
+        const badgeBg = isZD ? 'rgba(110,231,255,.25)' : 'rgba(139,92,246,.25)';
+        const badgeColor = isZD ? '#6ee7ff' : '#b085f5';
+        html += `<div style="background:#1a1e27; padding:8px; border-radius:8px; border:1px solid var(--border); font-size:12px">`;
+        html += `<div style="display:flex; align-items:center; gap:6px; margin-bottom:4px">`;
+        html += `<span style="color:var(--text); font-weight:700">${lesson.startTime}–${lesson.endTime}</span>`;
+        html += `<span style="background:${badgeBg}; color:${badgeColor}; padding:1px 5px; border-radius:3px; font-size:10px; font-weight:700">${lesson.type}</span>`;
+        html += `<span style="color:var(--text); font-weight:600">${lesson.student}</span>`;
+        html += `</div>`;
+        if(lesson.note) html += `<div style="color:var(--muted); font-size:11px; font-style:italic">${lesson.note}</div>`;
+        html += `</div>`;
+      });
+      html += `</div>`;
+    }
+    
+    html += `<div class="footer" style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap">`;
+    html += `<button class="btn ghost" onclick="this.closest('.dialog-wrap').remove()">Zamknij</button>`;
+    if(tempChange){
+      html += `<button class="btn ghost" onclick="removeTempChange('${dateStr}'); this.closest('.dialog-wrap').remove()">↺ Przywróć plan</button>`;
+    }
+    html += `<button class="btn primary" onclick="this.closest('.dialog-wrap').remove(); openTempChangeForDate('${dateStr}')">⚙ Zmiana</button>`;
+    html += `</div>`;
+    
+    dialog.innerHTML = html;
+    popup.appendChild(dialog);
+    
+    popup.addEventListener('click', (e) => {
+      if(e.target === popup) popup.remove();
+    });
+    
+    document.body.appendChild(popup);
+  }
+  
+  function removeTempChange(dateStr){
+    const tempChanges = loadTempChanges();
+    const filtered = tempChanges.filter(tc => tc.date !== dateStr);
+    localStorage.setItem(tempChangesKey, JSON.stringify(filtered));
+    renderWeek();
+    renderMonthCalendar();
+  }
+  
+  function openTempChangeForDate(dateStr){
+    const parts = dateStr.split('-');
+    const year = parseInt(parts[0]);
+    const month = parseInt(parts[1]) - 1;
+    const day = parseInt(parts[2]);
+    
+    selectedTempChangeDate = new Date(year, month, day);
+    
+    el('tempChangeStep1').style.display = 'none';
+    el('tempChangeStep2').style.display = 'block';
+    el('tempChangeSaveBtn').style.display = 'block';
+    el('tempChangeCancelBtn').textContent = el('tempChangeCancelBtn').dataset.step2;
+    
+    el('tempChangePlanWrap').style.display = 'flex';
+    
+    // Load and display the lessons for this day
+    showTempChangeStep2(selectedTempChangeDate);
+  }
+
   // ===== EDIT STATIC PLAN FUNCTIONS =====
   let selectedEditPlanDay = null;
   
@@ -2101,6 +2373,7 @@
     el('editPlanWrap').style.display = 'none';
     selectedEditPlanDay = null;
     renderWeek();
+    renderMonthCalendar();
   }
 
   // Close edit plan popup
@@ -2263,6 +2536,7 @@
     localStorage.setItem(tempChangesKey, JSON.stringify(tempChanges));
     el('tempChangePlanWrap').style.display = 'none';
     renderWeek();
+    renderMonthCalendar();
   }
 
   el('tempChangeCancelBtn')?.addEventListener('click', () => {
@@ -2308,14 +2582,36 @@
   el('editStaticPlanBtn')?.addEventListener('click', openEditStaticPlanPopup);
   el('addTempChangeBtn')?.addEventListener('click', openAddTempChangePopup);
 
+  // Monthly calendar navigation
+  el('prevMonthCal')?.addEventListener('click', () => {
+    monthCalendarState.month--;
+    if(monthCalendarState.month < 0){
+      monthCalendarState.month = 11;
+      monthCalendarState.year--;
+    }
+    renderMonthCalendar();
+  });
+
+  el('nextMonthCal')?.addEventListener('click', () => {
+    monthCalendarState.month++;
+    if(monthCalendarState.month > 11){
+      monthCalendarState.month = 0;
+      monthCalendarState.year++;
+    }
+    renderMonthCalendar();
+  });
+
   // Render week when switching to terminy tab
   el('terminyTab')?.addEventListener('click', ()=>{
-    setTimeout(()=>{ renderWeek(); }, 50);
+    setTimeout(()=>{ renderWeek(); renderMonthCalendar(); }, 50);
   });
 
   // Initial render on load if terminy is visible
   if(currentView === 'students'){
-    setTimeout(()=>{ renderWeek(); }, 100);
+    setTimeout(()=>{ renderWeek(); renderMonthCalendar(); }, 100);
+  } else {
+    // Render calendar on page load
+    renderMonthCalendar();
   }
   </script>
 </body>
