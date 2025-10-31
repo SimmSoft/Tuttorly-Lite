@@ -194,7 +194,7 @@
     .fab.dark{background:linear-gradient(145deg,#1a2847,#0f1626); color:var(--text); border-top-color:rgba(255,255,255,.15)}
 
     /* MODAL */
-    .dialog-wrap{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.5); z-index:30}
+    .dialog-wrap{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.5); z-index:30; padding:20px}
     .dialog{width:520px; max-width:92vw; background:#0f1218; border:1px solid var(--border); border-radius:18px; padding:12px; box-shadow:var(--shadow); max-height:85vh; overflow:auto}
     .dialog h3{margin:10px 0 8px}
     .dialog .row{margin:6px 0}
@@ -204,7 +204,7 @@
     .divider{display:flex; align-items:center; gap:10px; margin:10px 0 6px;}
     .divider::before, .divider::after{content:''; height:1px; background:var(--border); flex:1}
     .divider span{font-size:12px; color:var(--muted); letter-spacing:.4px}
-    .footer{display:flex; justify-content:center; align-items:center; gap:10px; margin-top:14px}
+    .footer{display:flex; justify-content:center; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap}
     .footerRight{display:flex; gap:10px}
     .btn.danger{background:linear-gradient(145deg,#ef4444,#dc2626); border-color:transparent; color:#fff; font-weight:700}
     .btn.primary{background:linear-gradient(145deg,#1a2847,#0f1626); border-color:transparent; color:var(--text); font-weight:900}
@@ -267,7 +267,7 @@
     .lessonNote{color:var(--muted); font-size:10px; margin-top:2px; font-style:italic; word-wrap:break-word; word-break:break-word; white-space:pre-wrap; text-align:left}
     .emptyLessonMsg{color:var(--muted); font-size:11px}
 
-    .terminyActions{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px}
+    .terminyActions{display:grid; grid-template-columns:1fr; gap:10px; margin-bottom:16px; justify-items:center}
     .terminyBtn{background:#1a1e27; border:1px solid var(--border); color:var(--text); padding:12px; border-radius:12px; cursor:pointer; font-weight:600; font-size:13px; transition:all .15s ease}
     .terminyBtn:hover{background:#1f2430; border-color:var(--accent)}
     .terminyBtn:active{transform:scale(.98)}
@@ -281,17 +281,17 @@
     .weekDaysHeader{display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:8px; text-align:center}
     .dayHeader{color:var(--muted); font-size:11px; font-weight:700; letter-spacing:.5px; padding:6px 0}
     .monthGrid{display:grid; grid-template-columns:repeat(7,1fr); gap:6px}
-    .dayCell{background:#1a1e27; border:1px solid var(--border); border-radius:10px; padding:8px 6px; text-align:center; cursor:pointer; aspect-ratio:1; display:flex; flex-direction:column; position:relative; transition:all .15s ease; justify-content:space-between}
+    .dayCell{background:#1a1e27; border:1px solid var(--border); border-radius:10px; padding:6px 4px; text-align:center; cursor:pointer; aspect-ratio:1; display:flex; flex-direction:column; position:relative; transition:all .15s ease; justify-content:space-between; min-width:0; overflow:hidden}
     .dayCell:hover{background:#1f2430; border-color:var(--accent)}
     .dayCell.otherMonth{opacity:.3; cursor:default}
     .dayCell.otherMonth:hover{background:#1a1e27; border-color:var(--border)}
-    .dayCell.hasChange::before{content:'⚙'; position:absolute; top:2px; right:4px; font-weight:800; color:#fff; font-size:12px; text-shadow: 0 0 8px rgba(93,215,239,.6), 0 0 16px rgba(139,92,246,.4)}
+    .dayCell.hasChange::before{content:'⚙'; position:absolute; top:1px; right:1px; font-weight:800; color:#fff; font-size:12px; text-shadow: 0 0 8px rgba(93,215,239,.6), 0 0 16px rgba(139,92,246,.4)}
     .dayCellNumber{font-weight:700; color:var(--text); font-size:13px; margin-bottom:2px}
     .dayCellNumber.weekend{color:#ef4444}
     .dayCellIndicators{display:grid; gap:1px; width:100%; position:relative; height:auto; place-items:center}
     
     /* Lesson bar - single bar with color segments */
-    .lessonBar{width:100%; height:6px; border-radius:3px; background:var(--accent); background-size:100%; box-shadow: inset 0 0 4px rgba(0,0,0,.3)}
+    .lessonBar{width:100%; height:8px; border-radius:4px; background:var(--accent); background-size:100%; box-shadow: inset 0 0 4px rgba(0,0,0,.3)}
     .lessonMoreBadge{position:absolute; left:50%; top:50%; transform:translate(-50%, -50%); font-size:8px; color:#fff; font-weight:700; z-index:10; pointer-events:none}
 
     /* PLAN EDIT POPUPS */
@@ -400,6 +400,9 @@
       .dayCard{grid-template-columns:65px 1fr; gap:8px; padding:10px}
       .dayHeader{font-size:12px; padding:2px 0}
       .lessonItem{font-size:10px; padding:6px 8px}
+      .footer{gap:6px}
+      .btn{height:40px; padding:0 12px; font-size:13px; flex:1}
+      .btn.primary, .btn.ghost, .btn.danger{flex:1; min-width:0}
     }
     @media (max-width:440px){ .phone{width:100%; height:calc(100vh - 48px)} }
     
@@ -466,7 +469,7 @@
         <!-- Action Buttons -->
         <div class="terminyActions">
           <button class="terminyBtn" id="editStaticPlanBtn">📋 Edytuj plan stały</button>
-          <button class="terminyBtn" id="addTempChangeBtn">➕ Dodaj zmianę</button>
+          <button class="terminyBtn" id="addTempChangeBtn" style="display:none">➕ Dodaj zmianę</button>
         </div>
 
         <!-- Monthly Calendar -->
@@ -842,6 +845,7 @@
   let currentId = null;
   let currentView = 'students';
   let pendingDeleteId = null;
+  let tempChangeFromDayPopup = false;
 
   // --- Safe History helpers (no-ops on sandbox/about:srcdoc) ---
   function canUseHistory(){
@@ -2103,7 +2107,7 @@
           }
           
           // Create linear gradient with equal segments and thin separator lines
-          const separatorWidth = 1.5; // percentage points for white separator
+          const separatorWidth = 2.5; // percentage points for separator
           const gradientStops = [];
           
           colors.forEach((color, i) => {
@@ -2115,7 +2119,7 @@
             
             // Add separator line between segments (dark gray)
             if(i < colors.length - 1){
-              gradientStops.push(`rgba(80,85,95,.8) ${adjustedEnd}% ${end}%`);
+              gradientStops.push(`rgba(60,65,75,.9) ${adjustedEnd}% ${end}%`);
             }
           });
           
@@ -2178,7 +2182,7 @@
         html += `<span style="background:${badgeBg}; color:${badgeColor}; padding:1px 5px; border-radius:3px; font-size:10px; font-weight:700">${lesson.type}</span>`;
         html += `<span style="color:var(--text); font-weight:600">${lesson.student}</span>`;
         html += `</div>`;
-        if(lesson.note) html += `<div style="color:var(--muted); font-size:11px; font-style:italic">${lesson.note}</div>`;
+        if(lesson.note) html += `<div style="color:var(--muted); font-size:11px; font-style:italic; word-break:break-word; word-wrap:break-word; overflow-wrap:break-word">${lesson.note}</div>`;
         html += `</div>`;
       });
       html += `</div>`;
@@ -2217,11 +2221,12 @@
     const day = parseInt(parts[2]);
     
     selectedTempChangeDate = new Date(year, month, day);
+    tempChangeFromDayPopup = true;
     
     el('tempChangeStep1').style.display = 'none';
     el('tempChangeStep2').style.display = 'block';
     el('tempChangeSaveBtn').style.display = 'block';
-    el('tempChangeCancelBtn').textContent = el('tempChangeCancelBtn').dataset.step2;
+    el('tempChangeCancelBtn').textContent = 'Zamknij';
     
     el('tempChangePlanWrap').style.display = 'flex';
     
@@ -2540,7 +2545,11 @@
   }
 
   el('tempChangeCancelBtn')?.addEventListener('click', () => {
-    if(el('tempChangeStep2').style.display === 'block'){
+    if(tempChangeFromDayPopup){
+      // When opened from day popup, always close
+      el('tempChangePlanWrap').style.display = 'none';
+      tempChangeFromDayPopup = false;
+    } else if(el('tempChangeStep2').style.display === 'block'){
       backToTempChangeCalendar();
     }else{
       el('tempChangePlanWrap').style.display = 'none';
