@@ -285,6 +285,7 @@
     .dayCell:hover{background:#1f2430; border-color:var(--accent)}
     .dayCell.otherMonth{opacity:.3; cursor:default}
     .dayCell.otherMonth:hover{background:#1a1e27; border-color:var(--border)}
+    .dayCell.today{border:1px solid rgba(228, 228, 228, 0.918); background:#1f2430}
     .dayCell.hasChange::before{content:'⚙'; position:absolute; top:1px; right:1px; font-weight:800; color:#fff; font-size:12px; text-shadow: 0 0 8px rgba(93,215,239,.6), 0 0 16px rgba(139,92,246,.4)}
     .dayCellNumber{font-weight:700; color:var(--text); font-size:13px; margin-bottom:2px}
     .dayCellNumber.weekend{color:#ef4444}
@@ -304,12 +305,23 @@
     .dayColumn h3{margin:0 0 6px 0; font-size:13px; color:var(--accent); font-weight:700}
     .lessonRow{background:#0f1218; border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; display:grid; grid-template-columns:1fr; gap:5px; font-size:11px}
     .lessonRow input, .lessonRow select{font-size:11px; padding:6px 8px; height:auto}
-    .lessonRowTime{display:grid; grid-template-columns:1fr 1fr; gap:4px}
+    .lessonRowTime{display:grid; grid-template-columns:70px 1fr; gap:6px; align-items:center}
     .lessonRowTime input{font-size:10px}
-    .lessonRowTypeStudent{display:grid; grid-template-columns:50px 1fr; gap:4px}
-    .lessonRowTypeStudent select{font-size:10px}
-    .lessonRowActions{display:grid; grid-template-columns:1fr 1fr; gap:4px}
-    .lessonRowActions button{font-size:9px; padding:3px 6px; height:26px}
+    .durationButtonGroup{display:flex; gap:2px; flex-wrap:wrap}
+    .durationBtn{padding:4px 6px; font-size:9px; font-weight:600; border:1px solid rgba(93,215,239,.4); border-radius:4px; background:transparent; color:var(--muted); cursor:pointer; transition:all .15s ease; white-space:nowrap}
+    .durationBtn:hover{border-color:var(--accent); color:var(--accent)}
+    .durationBtn.active{background:var(--accent); color:#fff; border-color:var(--accent)}
+    .lessonRowTypeStudent{display:grid; grid-template-columns:70px 1fr; gap:4px; align-items:center}
+    .typeButtonGroup{display:flex; gap:3px; border:1px solid var(--border); border-radius:6px; background:#0a0d12; padding:2px}
+    .typeBtn{flex:1; padding:5px 8px; font-size:10px; font-weight:600; border:none; border-radius:4px; cursor:pointer; background:transparent; color:var(--muted); transition:all .15s ease}
+    .typeBtn.st{background:transparent; color:var(--muted)}
+    .typeBtn.st.active{background:var(--accent-2); color:#fff}
+    .typeBtn.zd{background:transparent; color:var(--muted)}
+    .typeBtn.zd.active{background:var(--accent); color:#fff}
+    .lessonRowActions{display:grid; grid-template-columns:1fr; gap:4px; justify-items:center}
+    .lessonRowActions button{font-size:10px; padding:6px 12px;width: 100px; height:28px; background:linear-gradient(135deg,#4a4a4a,#2d2d2d); border:none; color:#e5e5e5; font-weight:600; border-radius:6px; cursor:pointer; transition:all .15s ease}
+    .lessonRowActions button:hover{filter:brightness(1.1)}
+    .lessonRowActions button:active{transform:scale(.98)}
     .addLessonBtn{background:rgba(93,215,239,.15); border:1px dashed var(--accent); color:var(--accent); padding:6px; border-radius:8px; cursor:pointer; font-size:10px; font-weight:600; transition:all .15s ease; margin-top:2px}
     .addLessonBtn:hover{background:rgba(93,215,239,.25)}
     
@@ -889,6 +901,15 @@
     const fab = el('addBtn');
     if(tabName === 'stats'){
       if(fab) { fab.classList.add('dark'); fab.style.display='grid'; }
+            // Initialize current month and year if not set
+      const monthDisplay = el('monthDisplay');
+     if(monthDisplay && monthDisplay.textContent.includes('październik 2025')){
+        const today = new Date();
+        const todayMonth = today.getMonth() + 1;
+        const todayYear = today.getFullYear();
+       const monthInv = {1:'styczeń', 2:'luty', 3:'marzec', 4:'kwiecień', 5:'maj', 6:'czerwiec', 7:'lipiec', 8:'sierpień', 9:'wrzesień', 10:'październik', 11:'listopad', 12:'grudzień'};
+        monthDisplay.textContent = monthInv[todayMonth] + ' ' + todayYear;
+      }
       renderStats();
       renderEarnings();
     } else if(tabName === 'terminy'){
@@ -1352,6 +1373,17 @@
     closeMonthSelector();
   }
 
+  // Initialize stats view with current month and year on app start
+  (function initializeCurrentMonth(){
+    const monthDisplay = el('monthDisplay');
+    if(monthDisplay && monthDisplay.textContent.includes('październik 2025')){
+      const today = new Date();
+      const todayMonth = today.getMonth() + 1;
+      const todayYear = today.getFullYear();
+      const monthInv = {1:'styczeń', 2:'luty', 3:'marzec', 4:'kwiecień', 5:'maj', 6:'czerwiec', 7:'lipiec', 8:'sierpień', 9:'wrzesień', 10:'październik', 11:'listopad', 12:'grudzień'};
+      monthDisplay.textContent = monthInv[todayMonth] + ' ' + todayYear;
+    }
+  })();
   el('editBtn')?.addEventListener('click',()=>{ if(currentId){ openDialog(currentId); setReadOnly(false);} });
   el('cancelDialog')?.addEventListener('click',()=>{ closeDialog(); });
   el('deleteBtn')?.addEventListener('click',()=>{
@@ -2076,6 +2108,12 @@
       if(isCurrentMonth){
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
         
+        // Check if this is today
+        const today = new Date();
+        if(currentDate.toDateString() === today.toDateString()){
+          cell.classList.add('today');
+        }
+        
         // Check for temp changes
         const hasChange = tempChanges.some(tc => tc.date === dateStr);
         if(hasChange) cell.classList.add('hasChange');
@@ -2336,6 +2374,14 @@
   }
 
   function createLessonRowHTML(dayNum, lesson){
+    // Calculate duration in minutes from start and end time
+    let duration = 60;
+    if(lesson.startTime && lesson.endTime){
+      const start = new Date(`2000-01-01T${lesson.startTime}`);
+      const end = new Date(`2000-01-01T${lesson.endTime}`);
+      duration = Math.round((end - start) / 60000);
+    }
+    
     const row = document.createElement('div');
     row.className = 'lessonRow';
     row.dataset.lessonId = lesson.id;
@@ -2344,20 +2390,60 @@
     row.innerHTML = `
       <div class="lessonRowTime">
         <input type="time" value="${lesson.startTime}" class="lessonStart" />
-        <input type="time" value="${lesson.endTime}" class="lessonEnd" />
+        <div class="durationButtonGroup" data-duration="${duration}">
+          <button type="button" class="durationBtn ${duration === 60 ? 'active' : ''}" data-duration="60">60</button>
+          <button type="button" class="durationBtn ${duration === 90 ? 'active' : ''}" data-duration="90">90</button>
+          <button type="button" class="durationBtn ${duration === 120 ? 'active' : ''}" data-duration="120">120</button>
+          <button type="button" class="durationBtn ${duration === 150 ? 'active' : ''}" data-duration="150">150</button>
+          <button type="button" class="durationBtn ${duration === 180 ? 'active' : ''}" data-duration="180">180</button>
+          <button type="button" class="durationBtn ${duration === 210 ? 'active' : ''}" data-duration="210">210</button>
+          <button type="button" class="durationBtn ${duration === 240 ? 'active' : ''}" data-duration="240">240</button>
+        </div>
       </div>
       <div class="lessonRowTypeStudent">
-        <select class="lessonTypeSelect">
-          <option value="ST" ${lesson.type === 'ST' ? 'selected' : ''}>ST</option>
-          <option value="ZD" ${lesson.type === 'ZD' ? 'selected' : ''}>ZD</option>
-        </select>
+        <div class="typeButtonGroup">
+          <button type="button" class="typeBtn st ${lesson.type === 'ST' ? 'active' : ''}" data-type="ST">ST</button>
+          <button type="button" class="typeBtn zd ${lesson.type === 'ZD' ? 'active' : ''}" data-type="ZD">ZD</button>
+        </div>
         <input type="text" class="lessonStudentInput" value="${lesson.student}" placeholder="Imię" />
       </div>
       <input type="text" class="lessonNoteInput" value="${lesson.note}" placeholder="Notatka" />
       <div class="lessonRowActions">
-        <button class="btn" onclick="this.parentElement.parentElement.remove()">✕ Usuń</button>
+        <button type="button" class="deleteBtn">✕ Usuń lekcję</button>
       </div>
     `;
+    
+    // Setup type button handlers
+    const stBtn = row.querySelector('.typeBtn.st');
+    const zdBtn = row.querySelector('.typeBtn.zd');
+    
+    stBtn.addEventListener('click', () => {
+      stBtn.classList.add('active');
+      zdBtn.classList.remove('active');
+    });
+    
+    zdBtn.addEventListener('click', () => {
+      zdBtn.classList.add('active');
+      stBtn.classList.remove('active');
+    });
+    
+    // Setup duration button handlers
+    const durationGroup = row.querySelector('.durationButtonGroup');
+    const durationBtns = row.querySelectorAll('.durationBtn');
+    
+    durationBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        durationBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        durationGroup.dataset.duration = btn.dataset.duration;
+      });
+    });
+    
+    // Setup delete button
+    row.querySelector('.deleteBtn').addEventListener('click', () => {
+      row.remove();
+    });
+    
     return row;
   }
 
@@ -2374,12 +2460,18 @@
     
     rows.forEach(row => {
       const startTime = row.querySelector('.lessonStart').value;
-      const endTime = row.querySelector('.lessonEnd').value;
-      const type = row.querySelector('.lessonTypeSelect').value;
+      const duration = parseInt(row.querySelector('.durationButtonGroup').dataset.duration) || 60;
+      const activeTypeBtn = row.querySelector('.typeBtn.active');
+      const type = activeTypeBtn ? activeTypeBtn.dataset.type : 'ST';
       const student = row.querySelector('.lessonStudentInput').value;
       const note = row.querySelector('.lessonNoteInput').value;
       
-      if(student.trim()){
+      if(student.trim() && startTime){
+        // Calculate end time from start time + duration
+        const start = new Date(`2000-01-01T${startTime}`);
+        start.setMinutes(start.getMinutes() + duration);
+        const endTime = `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
+        
         dayData.lessons.push({
           id: row.dataset.lessonId,
           startTime,
@@ -2533,12 +2625,18 @@
     
     rows.forEach(row => {
       const startTime = row.querySelector('.lessonStart').value;
-      const endTime = row.querySelector('.lessonEnd').value;
-      const type = row.querySelector('.lessonTypeSelect').value;
+      const duration = parseInt(row.querySelector('.durationSlider').value);
+      const activeTypeBtn = row.querySelector('.typeBtn.active');
+      const type = activeTypeBtn ? activeTypeBtn.dataset.type : 'ST';
       const student = row.querySelector('.lessonStudentInput').value;
       const note = row.querySelector('.lessonNoteInput').value;
       
-      if(student.trim()){
+      if(student.trim() && startTime){
+        // Calculate end time from start time + duration
+        const start = new Date(`2000-01-01T${startTime}`);
+        start.setMinutes(start.getMinutes() + duration);
+        const endTime = `${String(start.getHours()).padStart(2, '0')}:${String(start.getMinutes()).padStart(2, '0')}`;
+        
         lessons.push({
           id: row.dataset.lessonId,
           startTime,
