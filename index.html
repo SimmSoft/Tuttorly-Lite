@@ -2623,7 +2623,7 @@
     
     rows.forEach(row => {
       const startTime = row.querySelector('.lessonStart').value;
-      const duration = parseInt(row.querySelector('.durationSlider').value);
+      const duration = parseInt(row.querySelector('.durationButtonGroup').dataset.duration) || 60;
       const activeTypeBtn = row.querySelector('.typeBtn.active');
       const type = activeTypeBtn ? activeTypeBtn.dataset.type : 'ST';
       const student = row.querySelector('.lessonStudentInput').value;
