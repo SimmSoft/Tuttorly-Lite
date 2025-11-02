@@ -2802,6 +2802,10 @@
     // Render calendar on page load
     renderMonthCalendar();
   }
+  window.addEventListener('popstate', () => {
+  el('monthSelectorWrap').style.display = 'none';
+  el('yearSelectorWrap').style.display = 'none';
+});
   </script>
 </body>
 </html>
