@@ -755,7 +755,7 @@
         <div style="font-weight:700">Wybierz miesiąc</div>
         <div class="yearDisplay" id="yearDisplay" onclick="openYearSelector()">2025</div>
       </div>
-      <div id="monthGrid" style="padding:12px; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-height:300px; overflow:auto; flex:1"></div>
+      <div id="monthSelectorGrid" style="padding:12px; display:grid; grid-template-columns:repeat(3,1fr); gap:8px; max-height:300px; overflow:auto; flex:1"></div>
       <div style="padding:12px; border-top:1px solid var(--border)">
         <button class="goTodayBtn" onclick="goToToday()">📅 Kliknij tutaj aby powrócić do dzisiaj</button>
       </div>
@@ -1340,7 +1340,7 @@
 
   function renderMonthGrid(year, currentMonth){
     const monthInv = {1:'styczeń', 2:'luty', 3:'marzec', 4:'kwiecień', 5:'maj', 6:'czerwiec', 7:'lipiec', 8:'sierpień', 9:'wrzesień', 10:'październik', 11:'listopad', 12:'grudzień'};
-    const grid = el('monthGrid');
+    const grid = el('monthSelectorGrid');
     grid.innerHTML = '';
     
     const today = new Date();
