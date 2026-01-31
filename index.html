@@ -176,9 +176,18 @@
     .center-avatar{display:flex; justify-content:center; margin-top:8px}
     .avatar.big{width:80px; height:80px; border-radius:22px; border:2px solid rgba(255,255,255,.12); background:linear-gradient(145deg,#1f2430,#111319); box-shadow:0 10px 18px rgba(0,0,0,.28)}
 
-    .balanceWrap{display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:12px}
+    .balanceWrap{display:flex; align-items:center; gap:6px; padding:8px 10px; border-radius:12px; text-align:center}
+    .balanceWrap .balanceLine{display:flex; align-items:center; justify-content:center; gap:6px; font-size:14px}
+    .balanceWrap .balanceLabel{color:var(--muted)}
+    .balanceWrap .requiredAmount{font-weight:700; color:var(--text)}
     .balanceWrap.highlight{background:var(--goodbg); outline:1px solid rgba(34,197,94,.3)}
-    .badge{padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.12);}
+    .badge{padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center; text-align:center}
+    .activePriceBadge{flex-direction:column; gap:2px; padding:8px 12px}
+
+    .inputIconWrap{position:relative; width:100%}
+    .inputIcon{position:absolute; left:12px; top:50%; transform:translateY(-50%); width:18px; height:18px; color:var(--muted); opacity:.7; display:grid; place-items:center; pointer-events:none}
+    .inputIcon svg{width:18px; height:18px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
+    .inputWithIcon{padding-left:38px}
 
     /* MAP */
     .map-wrap{position:relative}
@@ -612,15 +621,15 @@
 
         <!-- Balance -->
         <div id="balanceWrap" class="balanceWrap" style="max-width:280px; margin:0 auto; flex-direction:column; justify-content:center">
-          <div style="color:var(--muted); font-size:14px; margin-bottom:4px">Nadwyżka:</div>
-          <span id="dBalance" class="amount" style="font-size:18px; font-weight:900">0 zł</span>
+          <div class="balanceLine">
+            <span class="balanceLabel">Wymagana kwota:</span>
+            <span id="dRequired" class="requiredAmount">0 zł</span>
+          </div>
+          <div class="balanceLine">
+            <span class="balanceLabel">Bilans:</span>
+            <span id="dBalance" class="amount" style="font-size:18px; font-weight:900">0 zł</span>
+          </div>
           <span id="freeBadge" class="badge" style="display:none; margin-left:0; margin-top:8px">Darmowa lekcja</span>
-        </div>
-
-        <!-- Active & Price -->
-        <div class="row" id="activeRowView" style="gap:16px; max-width:280px">
-          <div class="badge" id="activeBadge" style="flex:1">Aktywne: —</div>
-          <div class="badge" id="priceBadge" style="flex:1">Cena: —</div>
         </div>
 
         <!-- Action Buttons -->
@@ -637,8 +646,27 @@
           <input id="customAmount" type="number" placeholder="Custom" />
         </div>
 
+        <!-- Active & Price -->
+        <div class="row" id="activeRowView" style="max-width:280px">
+          <div class="badge activePriceBadge" style="flex:1">
+            <div id="activeBadge">Zdalne: 60 min</div>
+            <div id="priceBadge">Cena: —</div>
+          </div>
+        </div>
+
         <!-- Location -->
-        <div class="row" style="max-width:280px"><input id="dLocation" placeholder="Miejsce (miasto)" style="text-align:center" /></div>
+        <div class="row" style="max-width:280px">
+          <div class="inputIconWrap">
+            <span class="inputIcon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M3 11.5 12 4l9 7.5"/>
+                <path d="M6 10.5V20h12v-9.5"/>
+                <path d="M10 20v-6h4v6"/>
+              </svg>
+            </span>
+            <input id="dLocation" class="inputWithIcon" placeholder="Miejsce (miasto)" style="text-align:center" />
+          </div>
+        </div>
 
         <!-- Map Button -->
         <div class="row" style="margin-top: 12px; max-width:280px">

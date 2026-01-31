@@ -292,7 +292,25 @@
   }
 
   function renderAvatar(s){ const dA=el('dAvatar'); dA.innerHTML=''; if(s.avatar){ const img=document.createElement('img'); img.src=s.avatar; img.alt='avatar'; dA.appendChild(img);} else { dA.textContent=(s.name||'?').split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase(); } }
-  function renderBalance(val){ const b=el('dBalance'); b.textContent=formatPLN(val); b.classList.remove('pos','neg'); if(val>0)b.classList.add('pos'); if(val<0)b.classList.add('neg'); evaluateFree(); }
+  function renderBalance(val){
+    const b=el('dBalance');
+    const abs = Math.abs(Number(val)||0);
+    const formatted = formatPLN(abs);
+    b.textContent = val>0 ? `+${formatted}` : (val<0 ? `-${formatted}` : formatPLN(0));
+    b.classList.remove('pos','neg');
+    if(val>0)b.classList.add('pos');
+    if(val<0)b.classList.add('neg');
+    renderRequiredAmount(val);
+    evaluateFree();
+  }
+  function renderRequiredAmount(balanceOverride){
+    const reqEl = el('dRequired'); if(!reqEl) return;
+    const s=state.students.find(x=>x.id===currentId); if(!s) return;
+    const price = getActivePrice();
+    const balance = (typeof balanceOverride==='number') ? balanceOverride : (Number(s.balance)||0);
+    const required = Math.max(0, (Number(price)||0) - balance);
+    reqEl.textContent = formatPLN(required);
+  }
   function setReadOnly(ro){ el('detailView').classList.toggle('readonly', !!ro); }
   function updateMap(place){ const map=el('map'); const q=encodeURIComponent(place||'Polska'); map.src=`https://maps.google.com/maps?q=${q}&z=14&output=embed`; }
 
@@ -332,7 +350,7 @@
   });
 
   function getActivePrice(){ const s=state.students.find(x=>x.id===currentId); if(!s) return 0; const key=(s.active?.type==='station'?'station':'remote')+String(s.active?.dur||60); const v=s.pricing?.[key]??0; return Number(v)||0; }
-  function renderActiveSummary(){ const s=state.students.find(x=>x.id===currentId); if(!s) return; const typeLabel=(s.active?.type==='station')?'Stacjonarne':'Zdalne'; const dur=s.active?.dur||60; const price=getActivePrice(); const badge=el('activeBadge'); const priceBadge=el('priceBadge'); if(badge) badge.textContent=`Aktywne: ${typeLabel} — ${dur} min`; if(priceBadge) priceBadge.textContent=`Cena: ${price?formatPLN(price):'—'}`; evaluateFree(); }
+  function renderActiveSummary(){ const s=state.students.find(x=>x.id===currentId); if(!s) return; const typeLabel=(s.active?.type==='station')?'Stacjonarne':'Zdalne'; const dur=s.active?.dur||60; const price=getActivePrice(); const badge=el('activeBadge'); const priceBadge=el('priceBadge'); if(badge) badge.textContent=`${typeLabel}: ${dur} min`; if(priceBadge) priceBadge.textContent=`Cena: ${price?formatPLN(price):''}`; renderRequiredAmount(); evaluateFree(); }
   function evaluateFree(){ const s=state.students.find(x=>x.id===currentId); if(!s) return; const p=getActivePrice(); const wrap=el('balanceWrap'); const badge=el('freeBadge'); const ok=p>0 && s.balance===p; if(wrap) wrap.classList.toggle('highlight', ok); if(badge) badge.style.display= ok? 'inline-block':'none'; }
 
   function applyDelta(d){ const s=state.students.find(x=>x.id===currentId); if(!s) return; s.balance=Math.round(s.balance+d); save(); renderBalance(s.balance); renderList(); }
