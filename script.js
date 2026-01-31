@@ -1158,28 +1158,35 @@
     
     const staticPlan = loadStaticPlan();
     const tempChanges = loadTempChanges();
-    const today = getTodayFromMonday();
+    
+    const now = new Date();
+    const day = now.getDay();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
+    monday.setHours(0,0,0,0);
+
+    const todayDayNum = day === 0 ? 7 : day;
     
     container.innerHTML = '';
 
     staticPlan.forEach(dayData => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + (dayData.dayNum - 1));
+      const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
       const dayCard = document.createElement('div');
       dayCard.className = 'dayCard';
-      if(dayData.dayNum === today) dayCard.classList.add('today');
+      if(dayData.dayNum === todayDayNum) dayCard.classList.add('today');
       if(dayData.lessons.length === 0) dayCard.classList.add('empty');
 
-      // Find temp changes for this day
-      const tempChange = tempChanges.find(tc => {
-        const tcDate = new Date(tc.date);
-        const tcDayNum = tcDate.getDay() === 0 ? 7 : tcDate.getDay();
-        return tcDayNum === dayData.dayNum;
-      });
+      // Find temp changes for this specific date in current week
+      const tempChange = tempChanges.find(tc => tc.date === dateStr);
 
       const lessonsToShow = tempChange?.lessons || dayData.lessons;
 
       const dayHeader = document.createElement('div');
       dayHeader.className = 'dayHeader';
-      if(dayData.dayNum === today) dayHeader.classList.add('today');
+      if(dayData.dayNum === todayDayNum) dayHeader.classList.add('today');
       dayHeader.textContent = dayData.day.substring(0, 3).toUpperCase();
       dayCard.appendChild(dayHeader);
 
@@ -1238,7 +1245,7 @@
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const daysInPrevMonth = new Date(year, month, 0).getDate();
     
-    const startDate = firstDay === 0 ? daysInPrevMonth - 6 : firstDay - 1;
+    const startDate = firstDay === 0 ? 6 : firstDay - 1;
     
     let dayCounter = 1;
     let prevMonthDays = daysInPrevMonth - startDate + 1;
