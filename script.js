@@ -17,11 +17,22 @@
   function uid(){ return Math.random().toString(36).slice(2,10); }
   function formatPLN(n){ try{ return new Intl.NumberFormat('pl-PL',{style:'currency',currency:'PLN', maximumFractionDigits:0}).format(n);}catch{ return Math.round(n)+' zł'; } }
   function save(){ localStorage.setItem(storeKey, JSON.stringify(state)); }
-  function load(){ const raw = localStorage.getItem(storeKey); if(raw){ try{ const d=JSON.parse(raw); d.students?.forEach((s,i)=>{ if(typeof s.order!=="number") s.order=i; if(!s.pricing) s.pricing={}; }); if(!d.earnings) d.earnings=[]; return d; }catch{} }
-    return { students:[
+  function normalizeState(data){
+    const d = (data && typeof data === 'object') ? data : {};
+    if(!Array.isArray(d.students)) d.students = [];
+    d.students.forEach((s,i)=>{ if(typeof s.order!=="number") s.order=i; if(!s.pricing) s.pricing={}; });
+    if(!Array.isArray(d.earnings)) d.earnings = [];
+    d.earnings.forEach(e=>{
+      if(!Array.isArray(e.studentIds)) e.studentIds = [];
+      if(typeof e.noteText !== 'string') e.noteText = (e.description || '');
+    });
+    return d;
+  }
+  function load(){ const raw = localStorage.getItem(storeKey); if(raw){ try{ const d=normalizeState(JSON.parse(raw)); return d; }catch{} }
+    return normalizeState({ students:[
       {id:uid(), order:0, name:'Anna Nowak', place:'Zielona Góra', notes:'Matematyka, 7 klasa', balance:10, pricing:{remote60:60, remote90:90, remote120:120, station60:80, station90:110, station120:140}, active:{type:'remote', dur:60}},
       {id:uid(), order:1, name:'Jan Kowalski', place:'Wrocław', notes:'Fizyka, matura', balance:-10, pricing:{remote60:70, remote90:100, remote120:120, station60:90, station90:130, station120:160}, active:{type:'station', dur:90}}
-    ], earnings:[] }; }
+    ], earnings:[] }); }
 
   window.addEventListener('load', ()=>{ setTimeout(()=>{ const s = el('splash'); if(s) s.style.display='none'; el('phone').classList.add('show'); }, 1200); });
 
@@ -273,6 +284,70 @@
   }
 
   function escapeHtml(str){ return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function normalizeText(str){ return (str||'').toString().toLowerCase(); }
+  function getStudentById(id){ return state.students.find(s => s.id === id); }
+  function getStudentDisplayNameById(id){ const s = getStudentById(id); return s ? s.name : ''; }
+  function getLessonDisplayName(lesson){
+    if(lesson && lesson.studentId){ const name = getStudentDisplayNameById(lesson.studentId); if(name) return name; }
+    if(lesson && lesson.customName) return lesson.customName;
+    if(lesson && lesson.student) return lesson.student;
+    return '';
+  }
+  function getEarningDescription(entry){
+    const ids = Array.isArray(entry?.studentIds) ? entry.studentIds : [];
+    const names = ids.map(getStudentDisplayNameById).filter(Boolean);
+    let note = (entry?.noteText || entry?.description || '').trim();
+    if(names.length && note){
+      const noteNorm = normalizeText(note);
+      const joinedNorm = normalizeText(names.join(', '));
+      const matchSingle = names.some(n => normalizeText(n) === noteNorm);
+      if(matchSingle || noteNorm === joinedNorm) note = '';
+    }
+    if(names.length && note) return `${names.join(', ')}, ${note}`;
+    if(names.length) return names.join(', ');
+    return note;
+  }
+  function getStudentsMatching(query){
+    const q = normalizeText(query).trim();
+    if(q.length < 2) return [];
+    return state.students.filter(s => normalizeText(s.name).includes(q));
+  }
+  function renderStudentSuggestions(listEl, query, excludeIds){
+    const matches = getStudentsMatching(query).filter(s => !excludeIds || !excludeIds.includes(s.id));
+    if(!listEl) return;
+    if(matches.length === 0){
+      listEl.style.display = 'none';
+      listEl.innerHTML = '';
+      return;
+    }
+    listEl.innerHTML = matches.map(s => (
+      `<div class="studentPickerItem" data-id="${s.id}">` +
+      `<span>${escapeHtml(s.name)}</span>` +
+      `<span class="muted">${escapeHtml(s.place || '')}</span>` +
+      `</div>`
+    )).join('');
+    listEl.style.display = 'block';
+  }
+  function setupStudentPickerSingle(input, listEl, onSelect){
+    if(!input || !listEl) return;
+    const hide = ()=>{ listEl.style.display='none'; };
+    const render = ()=>{ renderStudentSuggestions(listEl, input.value, []); };
+    input.addEventListener('input', ()=>{ onSelect(null); render(); });
+    input.addEventListener('focus', ()=>{ render(); });
+    listEl.addEventListener('mousedown', (e)=>{
+      const item = e.target.closest('.studentPickerItem');
+      if(!item) return;
+      const id = item.dataset.id;
+      onSelect(id);
+      input.value = getStudentDisplayNameById(id) || '';
+      hide();
+    });
+    document.addEventListener('click', (e)=>{
+      if(e.target === input) return;
+      if(listEl.contains(e.target)) return;
+      hide();
+    });
+  }
 
   function selectStudent(id){
     currentId=id; const s=state.students.find(x=>x.id===id); if(!s) return;
@@ -594,8 +669,20 @@
   el('addMinus')?.addEventListener('click',()=>{ const v=Number(el('customAmount')?.value); if(!v) return; applyDelta(-Math.abs(v)); el('customAmount') && (el('customAmount').value=''); });
 
   // Export/Import handlers
-  const exportFunc = ()=>{ const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='tuttorly-data.json'; a.click(); URL.revokeObjectURL(url); };
-  const importFunc = (fileInputId)=>{ const fileInput=el(fileInputId); if(!fileInput) return; const file=fileInput.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ try{ const data=JSON.parse(reader.result); if(!data||!Array.isArray(data.students)) throw new Error('Zły format pliku'); data.students.forEach((s,i)=>{ if(typeof s.order!=="number") s.order=i; }); state=data; save(); renderList(); setView('list'); currentId=null; alert('Zaimportowano dane.'); closeSettingsDialog(); }catch(err){ alert('Błąd importu: '+err.message);} }; reader.readAsText(file); fileInput.value=''; };
+  const exportFunc = ()=>{
+    const exportData = {
+      ...state,
+      staticPlan: loadStaticPlan(),
+      tempChanges: loadTempChanges(),
+      exportVersion: 2
+    };
+    const blob=new Blob([JSON.stringify(exportData,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='tuttorly-data.json';
+    a.click(); URL.revokeObjectURL(url);
+  };
+  const importFunc = (fileInputId)=>{ const fileInput=el(fileInputId); if(!fileInput) return; const file=fileInput.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=()=>{ try{ const data=JSON.parse(reader.result); if(!data||!Array.isArray(data.students)) throw new Error('Z?y format pliku'); state=normalizeState(data); if(data.staticPlan) localStorage.setItem(staticPlanKey, JSON.stringify(normalizePlan(data.staticPlan))); if(data.tempChanges) localStorage.setItem(tempChangesKey, JSON.stringify(normalizeTempChanges(data.tempChanges))); save(); renderList(); renderStats(); renderEarnings(); renderWeek(); renderMonthCalendar(); setView('list'); currentId=null; alert('Zaimportowano dane.'); closeSettingsDialog(); }catch(err){ alert('B??d importu: '+err.message);} }; reader.readAsText(file); fileInput.value=''; };
   
   el('exportBtn')?.addEventListener('click', exportFunc);
   el('settingsExportBtn')?.addEventListener('click', exportFunc);
@@ -632,6 +719,7 @@
   // --- INCOME ENTRIES LOGIC ---
   let pendingIncomeDeleteId = null;
   let currentIncomeType = 'cash';
+  let incomeSelectedStudentIds = [];
   let chartYear = new Date().getFullYear();
   
   function setTodayDate(){
@@ -646,6 +734,52 @@
       btn.classList.toggle('active', btn.dataset.type === type);
     });
   }
+  function renderIncomeSelectedList(){
+    const listEl = el('incomeSelectedList');
+    if(!listEl) return;
+    listEl.innerHTML = "";
+    incomeSelectedStudentIds.forEach(id => {
+      const name = getStudentDisplayNameById(id);
+      if(!name) return;
+      const chip = document.createElement('div');
+      chip.className = 'selectedChip';
+      chip.innerHTML = `<span>${escapeHtml(name)}</span><button type="button" aria-label="Usun">X</button>`;
+      chip.querySelector('button').addEventListener('click', () => {
+        incomeSelectedStudentIds = incomeSelectedStudentIds.filter(x => x !== id);
+        renderIncomeSelectedList();
+      });
+      listEl.appendChild(chip);
+    });
+  }
+  function setIncomeSelectedIds(ids){
+    incomeSelectedStudentIds = Array.from(new Set((ids || []).filter(Boolean)));
+    renderIncomeSelectedList();
+  }
+  function setupIncomeStudentPicker(){
+    const input = el('incomeStudentSearch');
+    const listEl = el('incomeStudentSuggestions');
+    if(!input || !listEl) return;
+    const hide = ()=>{ listEl.style.display = 'none'; listEl.innerHTML = ''; };
+    const render = ()=>{
+      renderStudentSuggestions(listEl, input.value, incomeSelectedStudentIds);
+    };
+    input.addEventListener('input', render);
+    input.addEventListener('focus', render);
+    listEl.addEventListener('mousedown', (e)=>{
+      const item = e.target.closest('.studentPickerItem');
+      if(!item) return;
+      const id = item.dataset.id;
+      if(id && !incomeSelectedStudentIds.includes(id)) incomeSelectedStudentIds.push(id);
+      input.value = '';
+      hide();
+      renderIncomeSelectedList();
+    });
+    document.addEventListener('click', (e)=>{
+      if(e.target === input) return;
+      if(listEl.contains(e.target)) return;
+      hide();
+    });
+  }
 
   function openIncomeDialog(editId){
     const incomeDialog = el('incomeDialogWrap');
@@ -655,7 +789,8 @@
     const title = el('incomeDialogTitle');
     const amount = el('incomeAmount');
     const date = el('incomeDate');
-    const desc = el('incomeDesc');
+    const note = el('incomeNote');
+    const search = el('incomeStudentSearch');
     const delBtn = el('incomeDeleteBtn');
 
     if(editId){
@@ -665,14 +800,18 @@
       amount && (amount.value = entry.amount);
       updateIncomeTypeButtons(entry.type);
       date && (date.value = entry.date);
-      desc && (desc.value = entry.description || '');
+      setIncomeSelectedIds(entry.studentIds || []);
+      note && (note.value = entry.noteText || '');
+      search && (search.value = '');
       if(delBtn) delBtn.style.display = 'inline-flex';
       incomeDialog.dataset.editId = editId;
     } else {
       title && (title.textContent = 'Nowy wpis dochodów');
       amount && (amount.value = '');
       updateIncomeTypeButtons('cash');
-      desc && (desc.value = '');
+      setIncomeSelectedIds([]);
+      note && (note.value = '');
+      search && (search.value = '');
       setTodayDate();
       if(delBtn) delBtn.style.display = 'none';
       delete incomeDialog.dataset.editId;
@@ -731,6 +870,7 @@
     
     // Draw chart for the entire selected year
     drawChart(year);
+    renderOverduePayments();
   }
 
 
@@ -869,11 +1009,12 @@
       const typeLabel = entry.type === 'cash' ? '💵' : '🌐';
       const dateObj = new Date(entry.date + 'T00:00:00');
       const dateStr = dateObj.toLocaleDateString('pl-PL', {year:'numeric', month:'short', day:'numeric'});
+      const desc = getEarningDescription(entry);
       
       card.innerHTML = `
         <div style="flex:1">
           <div class="name">${formatPLN(entry.amount)} <span style="font-size:12px; color:var(--muted)">${typeLabel}</span></div>
-          <div class="sub">${dateStr}${entry.description ? ' • ' + escapeHtml(entry.description) : ''}</div>
+          <div class="sub">${dateStr}${desc ? ' · ' + escapeHtml(desc) : ''}</div>
         </div>`;
       
       card.addEventListener('click', () => {
@@ -885,6 +1026,7 @@
   }
 
   const incomeDialog = el('incomeDialogWrap');
+  setupIncomeStudentPicker();
   
   // Handle income type button clicks
   document.querySelectorAll('.incomeTypeBtn').forEach(btn => {
@@ -901,7 +1043,18 @@
     const amount = Number(el('incomeAmount')?.value);
     const type = el('incomeType')?.value || 'online';
     const date = el('incomeDate')?.value;
-    const desc = el('incomeDesc')?.value.trim() || '';
+    const noteText = (el('incomeNote')?.value || '').trim();
+    const searchText = (el('incomeStudentSearch')?.value || '').trim();
+    let extraNote = [noteText, searchText].filter(Boolean).join(', ');
+    const studentIds = incomeSelectedStudentIds.slice();
+    if(studentIds.length && extraNote){
+      const names = studentIds.map(getStudentDisplayNameById).filter(Boolean);
+      const extraNorm = normalizeText(extraNote);
+      const joinedNorm = normalizeText(names.join(', '));
+      const matchSingle = names.some(n => normalizeText(n) === extraNorm);
+      if(matchSingle || extraNorm === joinedNorm) extraNote = '';
+    }
+    const description = getEarningDescription({ studentIds, noteText: extraNote });
 
     if(!amount || amount <= 0){
       alert('Podaj kwotę większą niż 0');
@@ -918,14 +1071,18 @@
       entry.amount = amount;
       entry.type = type;
       entry.date = date;
-      entry.description = desc;
+      entry.studentIds = studentIds;
+      entry.noteText = extraNote;
+      entry.description = description;
     } else {
       state.earnings.push({
         id: uid(),
         amount,
         type,
         date,
-        description: desc,
+        description: description,
+        studentIds,
+        noteText: extraNote,
         createdAt: new Date().toISOString()
       });
     }
@@ -1104,14 +1261,37 @@
   const staticPlanKey = 'tuttorly.staticPlan';
   const tempChangesKey = 'tuttorly.tempChanges';
 
+  function normalizeLesson(lesson){
+    const l = lesson || {};
+    const next = { ...l };
+    if(typeof next.studentId !== 'string') next.studentId = null;
+    if(typeof next.customName !== 'string' || !next.customName){
+      if(typeof next.student === 'string' && next.student.trim()) next.customName = next.student;
+      else next.customName = '';
+    }
+    return next;
+  }
+  function normalizePlan(plan){
+    return (plan || []).map(day => ({
+      ...day,
+      lessons: (day.lessons || []).map(normalizeLesson)
+    }));
+  }
+  function normalizeTempChanges(changes){
+    return (changes || []).map(tc => ({
+      ...tc,
+      lessons: (tc.lessons || []).map(normalizeLesson)
+    }));
+  }
+
   // Default static plan data
   const defaultStaticPlan = [
     {
       day: 'Poniedziałek',
       dayNum: 1,
       lessons: [
-        { id: 'p001', startTime: '15:45', endTime: '17:00', type: 'ZD', student: 'Jakub', note: 'Englilanka' },
-        { id: 'p002', startTime: '17:15', endTime: '18:30', type: 'ZD', student: 'Natalia', note: 'Przyspieszony' }
+        { id: 'p001', startTime: '15:45', endTime: '17:00', type: 'ZD', customName: 'Jakub', note: 'Englilanka' },
+        { id: 'p002', startTime: '17:15', endTime: '18:30', type: 'ZD', customName: 'Natalia', note: 'Przyspieszony' }
       ]
     },
     { day: 'Wtorek', dayNum: 2, lessons: [] },
@@ -1120,17 +1300,17 @@
       day: 'Czwartek',
       dayNum: 4,
       lessons: [
-        { id: 'c001', startTime: '16:00', endTime: '17:30', type: 'ST', student: 'Radek', note: 'Matematyka' },
-        { id: 'c002', startTime: '17:45', endTime: '19:00', type: 'ST', student: 'RADEK', note: '' }
+        { id: 'c001', startTime: '16:00', endTime: '17:30', type: 'ST', customName: 'Radek', note: 'Matematyka' },
+        { id: 'c002', startTime: '17:45', endTime: '19:00', type: 'ST', customName: 'RADEK', note: '' }
       ]
     },
     {
       day: 'Piątek',
       dayNum: 5,
       lessons: [
-        { id: 'f001', startTime: '15:00', endTime: '16:00', type: 'ST', student: 'Ursuszek', note: 'Retorowana 4/6' },
-        { id: 'f002', startTime: '16:30', endTime: '17:45', type: 'ST', student: 'Cecylia', note: 'Przydzielana 33 Lila 4/13dasdasdasdasdasdasdasdasdasdasdasdsssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss' },
-        { id: 'f003', startTime: '17:45', endTime: '19:00', type: 'ZD', student: 'Amelia', note: '' }
+        { id: 'f001', startTime: '15:00', endTime: '16:00', type: 'ST', customName: 'Ursuszek', note: 'Retorowana 4/6' },
+        { id: 'f002', startTime: '16:30', endTime: '17:45', type: 'ST', customName: 'Cecylia', note: 'Przydzielana 33 Lila 4/13dasdasdasdasdasdasdasdasdasdasdasdsssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss' },
+        { id: 'f003', startTime: '17:45', endTime: '19:00', type: 'ZD', customName: 'Amelia', note: '' }
       ]
     },
     { day: 'Sobota', dayNum: 6, lessons: [] },
@@ -1138,7 +1318,7 @@
       day: 'Niedziela',
       dayNum: 7,
       lessons: [
-        { id: 'n001', startTime: '10:00', endTime: '11:30', type: 'ST', student: 'Moda Alicja', note: '' }
+        { id: 'n001', startTime: '10:00', endTime: '11:30', type: 'ST', customName: 'Moda Alicja', note: '' }
       ]
     }
   ];
@@ -1146,15 +1326,15 @@
   function loadStaticPlan(){
     const stored = localStorage.getItem(staticPlanKey);
     if(stored){
-      try{ return JSON.parse(stored); }catch{}
+      try{ return normalizePlan(JSON.parse(stored)); }catch{}
     }
-    return defaultStaticPlan;
+    return normalizePlan(defaultStaticPlan);
   }
 
   function loadTempChanges(){
     const stored = localStorage.getItem(tempChangesKey);
     if(stored){
-      try{ return JSON.parse(stored); }catch{}
+      try{ return normalizeTempChanges(JSON.parse(stored)); }catch{}
     }
     return [];
   }
@@ -1170,6 +1350,117 @@
     return jsDay === 0 ? 7 : jsDay; // Convert Sunday (0) to 7
   }
 
+  function getWeekStart(date){
+    const d = new Date(date);
+    const day = d.getDay();
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+    monday.setHours(0,0,0,0);
+    return monday;
+  }
+  function getWeekEnd(weekStart){
+    const sunday = new Date(weekStart);
+    sunday.setDate(weekStart.getDate() + 6);
+    sunday.setHours(23,59,59,999);
+    return sunday;
+  }
+  function formatDatePL(d){
+    return d.toLocaleDateString('pl-PL', {day:'2-digit', month:'2-digit', year:'numeric'});
+  }
+  function isDateInRange(dateStr, start, end){
+    const d = new Date(dateStr + 'T00:00:00');
+    return d >= start && d <= end;
+  }
+  function getPaidStudentIdsForRange(start, end){
+    const paid = new Set();
+    (state.earnings || []).forEach(entry => {
+      if(!entry?.date) return;
+      if(!isDateInRange(entry.date, start, end)) return;
+      (entry.studentIds || []).forEach(id => paid.add(id));
+    });
+    return paid;
+  }
+  const overdueDismissKey = 'tuttorly.overdueDismissed';
+  function loadDismissedOverdues(){
+    try{ return new Set(JSON.parse(localStorage.getItem(overdueDismissKey) || '[]')); }catch{ return new Set(); }
+  }
+  function saveDismissedOverdues(set){
+    localStorage.setItem(overdueDismissKey, JSON.stringify(Array.from(set)));
+  }
+  function getDateStr(date){
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  }
+  function getLessonsForDate(date){
+    const staticPlan = loadStaticPlan();
+    const tempChanges = loadTempChanges();
+    const dayNum = date.getDay() === 0 ? 7 : date.getDay();
+    const dateStr = getDateStr(date);
+    const tempChange = tempChanges.find(tc => tc.date === dateStr);
+    const planDay = staticPlan.find(d => d.dayNum === dayNum);
+    return tempChange?.lessons || planDay?.lessons || [];
+  }
+  function getOverdueEntries(maxWeeks){
+    const result = [];
+    const now = new Date();
+    const currentWeekStart = getWeekStart(now);
+    const weeksToCheck = maxWeeks || 8;
+    for(let i = 1; i <= weeksToCheck; i++){
+      const weekStart = new Date(currentWeekStart);
+      weekStart.setDate(currentWeekStart.getDate() - i * 7);
+      const weekEnd = getWeekEnd(weekStart);
+      const studentIdsInWeek = new Set();
+      for(let d = 0; d < 7; d++){
+        const day = new Date(weekStart);
+        day.setDate(weekStart.getDate() + d);
+        getLessonsForDate(day).forEach(lesson => {
+          if(lesson.studentId) studentIdsInWeek.add(lesson.studentId);
+        });
+      }
+      if(studentIdsInWeek.size === 0) continue;
+      const paidSet = getPaidStudentIdsForRange(weekStart, weekEnd);
+      studentIdsInWeek.forEach(id => {
+        if(!paidSet.has(id)){
+          result.push({
+            studentId: id,
+            rangeLabel: `${formatDatePL(weekStart)}–${formatDatePL(weekEnd)}`
+          });
+        }
+      });
+    }
+    return result;
+  }
+  function renderOverduePayments(){
+    const list = el('overdueList');
+    const header = el('overdueHeader');
+    if(!list || !header) return;
+    const dismissed = loadDismissedOverdues();
+    const entries = getOverdueEntries(3).filter(e => !dismissed.has(`${e.studentId}|${e.rangeLabel}`));
+    if(entries.length === 0){
+      list.style.display = 'none';
+      header.style.display = 'none';
+      list.innerHTML = '';
+      return;
+    }
+    header.style.display = 'flex';
+    list.style.display = 'block';
+    list.innerHTML = '';
+    entries.forEach(item => {
+      const name = getStudentDisplayNameById(item.studentId) || 'Uczeń';
+      const card = document.createElement('div');
+      card.className = 'overdueItem';
+      card.innerHTML = `
+        <div class="overdueText">${escapeHtml(name)} | ${item.rangeLabel} |</div>
+        <button class="overdueDismiss" data-dismiss="${item.studentId}|${item.rangeLabel}">x</button>`;
+      const dismissBtn = card.querySelector('button[data-dismiss]');
+      dismissBtn?.addEventListener('click', () => {
+        dismissed.add(`${item.studentId}|${item.rangeLabel}`);
+        saveDismissedOverdues(dismissed);
+        renderOverduePayments();
+      });
+      list.appendChild(card);
+    });
+  }
+
   function renderWeek(){
     const container = el('weekContainer');
     if(!container) return;
@@ -1179,9 +1470,9 @@
     
     const now = new Date();
     const day = now.getDay();
-    const monday = new Date(now);
-    monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1));
-    monday.setHours(0,0,0,0);
+    const monday = getWeekStart(now);
+    const weekEnd = getWeekEnd(monday);
+    const paidSet = getPaidStudentIdsForRange(monday, weekEnd);
 
     const todayDayNum = day === 0 ? 7 : day;
     
@@ -1221,10 +1512,16 @@
           const item = document.createElement('div');
           item.className = 'lessonItem';
 
-          let html = `<div><div class="lessonTime">${lesson.startTime}–${lesson.endTime}</div>`;
+          const displayName = getLessonDisplayName(lesson);
+          const hasStudentId = !!lesson.studentId;
+          const isPaid = hasStudentId && paidSet.has(lesson.studentId);
+          let html = `<div><div class="lessonMetaRow">`;
+          html += `<label class="lessonPaymentCheck"><input type="checkbox" disabled ${isPaid ? 'checked' : ''} /></label>`;
           html += `<div class="lessonTypeAndStudent">`;
+          html += `<span class="lessonTime">${lesson.startTime} - ${lesson.endTime}</span>`;
           html += `<span class="lessonType ${lesson.type.toLowerCase()}">${lesson.type}</span>`;
-          html += `<span class="lessonStudent">${lesson.student}</span>`;
+          html += `<span class="lessonStudent">${escapeHtml(displayName)}</span>`;
+          html += `</div>`;
           html += `</div></div>`;
           if(lesson.note) html += `<div class="lessonNote">${lesson.note}</div>`;
 
@@ -1427,7 +1724,7 @@
         html += `<div style="display:flex; align-items:center; gap:6px; margin-bottom:4px">`;
         html += `<span style="color:var(--text); font-weight:700">${lesson.startTime}–${lesson.endTime}</span>`;
         html += `<span style="background:${badgeBg}; color:${badgeColor}; padding:1px 5px; border-radius:3px; font-size:10px; font-weight:700">${lesson.type}</span>`;
-        html += `<span style="color:var(--text); font-weight:600">${lesson.student}</span>`;
+        html += `<span style="color:var(--text); font-weight:600">${escapeHtml(getLessonDisplayName(lesson))}</span>`;
         html += `</div>`;
         if(lesson.note) html += `<div style="color:var(--muted); font-size:11px; font-style:italic; word-break:break-word; word-wrap:break-word; overflow-wrap:break-word">${lesson.note}</div>`;
         html += `</div>`;
@@ -1535,7 +1832,7 @@
     addBtn.className = 'addLessonBtn';
     addBtn.textContent = '+ Dodaj lekcję';
     addBtn.onclick = () => {
-      const newRow = createLessonRowHTML(dayNum, {id: uid(), startTime: '10:00', endTime: '11:00', type: 'ST', student: '', note: ''});
+      const newRow = createLessonRowHTML(dayNum, {id: uid(), startTime: '10:00', endTime: '11:00', type: 'ST', customName: '', note: ''});
       lessonsList.insertBefore(newRow, addBtn);
     };
     
@@ -1572,6 +1869,7 @@
     row.className = 'lessonRow';
     row.dataset.lessonId = lesson.id;
     row.dataset.dayNum = dayNum;
+    row.dataset.studentId = lesson.studentId || '';
     
     row.innerHTML = `
       <div class="lessonRowTime">
@@ -1589,7 +1887,10 @@
           <button type="button" class="typeBtn st ${lesson.type === 'ST' ? 'active' : ''}" data-type="ST">ST</button>
           <button type="button" class="typeBtn zd ${lesson.type === 'ZD' ? 'active' : ''}" data-type="ZD">ZD</button>
         </div>
-        <input type="text" class="lessonStudentInput" value="${lesson.student}" placeholder="Imię" />
+        <div class="studentPicker">
+          <input type="text" class="lessonStudentInput studentPickerInput" value="${escapeHtml(getLessonDisplayName(lesson))}" placeholder="Imie" />
+          <div class="studentPickerList"></div>
+        </div>
       </div>
       <input type="text" class="lessonNoteInput" value="${lesson.note}" placeholder="Notatka" />
       <div class="lessonRowActions">
@@ -1628,6 +1929,10 @@
       row.remove();
     });
     
+    const studentInput = row.querySelector('.lessonStudentInput');
+    const studentList = row.querySelector('.studentPickerList');
+    setupStudentPickerSingle(studentInput, studentList, (id)=>{ row.dataset.studentId = id || ''; });
+
     return row;
   }
 
@@ -1647,10 +1952,12 @@
       const duration = parseInt(row.querySelector('.durationButtonGroup').dataset.duration) || 60;
       const activeTypeBtn = row.querySelector('.typeBtn.active');
       const type = activeTypeBtn ? activeTypeBtn.dataset.type : 'ST';
-      const student = row.querySelector('.lessonStudentInput').value;
+      const studentInput = row.querySelector('.lessonStudentInput').value.trim();
+      const studentId = row.dataset.studentId || null;
+      const customName = studentId ? '' : studentInput;
       const note = row.querySelector('.lessonNoteInput').value;
       
-      if(student.trim() && startTime){
+      if((studentId || customName) && startTime){
         // Calculate end time from start time + duration
         const start = new Date(`2000-01-01T${startTime}`);
         start.setMinutes(start.getMinutes() + duration);
@@ -1661,7 +1968,8 @@
           startTime,
           endTime,
           type,
-          student,
+          studentId,
+          customName,
           note
         });
       }
@@ -1776,7 +2084,7 @@
     addBtn.className = 'addLessonBtn';
     addBtn.textContent = '+ Dodaj lekcję';
     addBtn.onclick = () => {
-      const newRow = createLessonRowHTML(dayNum, {id: uid(), startTime: '10:00', endTime: '11:00', type: 'ST', student: '', note: ''});
+      const newRow = createLessonRowHTML(dayNum, {id: uid(), startTime: '10:00', endTime: '11:00', type: 'ST', customName: '', note: ''});
       lessonsList.insertBefore(newRow, addBtn);
     };
     
@@ -1812,10 +2120,12 @@
       const duration = parseInt(row.querySelector('.durationButtonGroup').dataset.duration) || 60;
       const activeTypeBtn = row.querySelector('.typeBtn.active');
       const type = activeTypeBtn ? activeTypeBtn.dataset.type : 'ST';
-      const student = row.querySelector('.lessonStudentInput').value;
+      const studentInput = row.querySelector('.lessonStudentInput').value.trim();
+      const studentId = row.dataset.studentId || null;
+      const customName = studentId ? '' : studentInput;
       const note = row.querySelector('.lessonNoteInput').value;
       
-      if(student.trim() && startTime){
+      if((studentId || customName) && startTime){
         // Calculate end time from start time + duration
         const start = new Date(`2000-01-01T${startTime}`);
         start.setMinutes(start.getMinutes() + duration);
@@ -1826,7 +2136,8 @@
           startTime,
           endTime,
           type,
-          student,
+          studentId,
+          customName,
           note
         });
       }
