@@ -177,7 +177,7 @@
     const sorted = state.students.slice().sort((a,b)=> (a.order??0)-(b.order??0));
     sorted.forEach(s=>{
       const card = document.createElement('div'); card.className='card'; card.dataset.id=s.id;
-      const initials=(s.name||'?').split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase();
+      const initials = getInitials(s.name);
       const avatar = s.avatar? `<img src="${s.avatar}" alt="">` : initials;
       const handleSvg = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>`;
       card.innerHTML = `
@@ -284,6 +284,15 @@
   }
 
   function escapeHtml(str){ return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function getInitials(name){
+    return (name || '?')
+      .split(/[\s\-\/"'“”‘’.,:;!?()\\[\\]{}|]+/)
+      .filter(Boolean)
+      .map(x => x[0])
+      .slice(0,2)
+      .join('')
+      .toUpperCase();
+  }
   function normalizeText(str){ return (str||'').toString().toLowerCase(); }
   function getStudentById(id){ return state.students.find(s => s.id === id); }
   function getStudentDisplayNameById(id){ const s = getStudentById(id); return s ? s.name : ''; }
@@ -366,7 +375,7 @@
     if (toggleBtn) toggleBtn.textContent = 'Pokaż mapę';
   }
 
-  function renderAvatar(s){ const dA=el('dAvatar'); dA.innerHTML=''; if(s.avatar){ const img=document.createElement('img'); img.src=s.avatar; img.alt='avatar'; dA.appendChild(img);} else { dA.textContent=(s.name||'?').split(' ').map(x=>x[0]).slice(0,2).join('').toUpperCase(); } }
+  function renderAvatar(s){ const dA=el('dAvatar'); dA.innerHTML=''; if(s.avatar){ const img=document.createElement('img'); img.src=s.avatar; img.alt='avatar'; dA.appendChild(img);} else { dA.textContent=getInitials(s.name); } }
   function renderBalance(val){
     const b=el('dBalance');
     const abs = Math.abs(Number(val)||0);
@@ -1515,14 +1524,14 @@
           const displayName = getLessonDisplayName(lesson);
           const hasStudentId = !!lesson.studentId;
           const isPaid = hasStudentId && paidSet.has(lesson.studentId);
-          let html = `<div><div class="lessonMetaRow">`;
-          html += `<label class="lessonPaymentCheck"><input type="checkbox" disabled ${isPaid ? 'checked' : ''} /></label>`;
+          let html = `<div class="lessonMetaRow">`;
+          html += `<label class="lessonPaymentCheck"><input type="checkbox" class="paymentCheckbox" disabled ${isPaid ? 'checked' : ''} /></label>`;
           html += `<div class="lessonTypeAndStudent">`;
           html += `<span class="lessonTime">${lesson.startTime} - ${lesson.endTime}</span>`;
           html += `<span class="lessonType ${lesson.type.toLowerCase()}">${lesson.type}</span>`;
           html += `<span class="lessonStudent">${escapeHtml(displayName)}</span>`;
           html += `</div>`;
-          html += `</div></div>`;
+          html += `</div>`;
           if(lesson.note) html += `<div class="lessonNote">${lesson.note}</div>`;
 
           item.innerHTML = html;

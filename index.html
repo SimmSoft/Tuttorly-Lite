@@ -348,8 +348,31 @@
     .addLessonBtn:hover{background:rgba(93,215,239,.25)}
 
     .lessonPaymentCheck{display:flex; align-items:center}
-    .lessonPaymentCheck input{accent-color:var(--accent)}
-    .lessonPaymentCheck{display:flex; align-items:center}
+    .paymentCheckbox{
+      appearance:none; -webkit-appearance:none;
+      width:14px; height:14px;
+      padding:0;
+      background-color:transparent;
+      border:1.5px solid var(--border);
+      border-radius:3px;
+      cursor:pointer;
+      position:relative;
+      transition:all .2s ease;
+      flex-shrink:0;
+      margin:0;
+    }
+    .paymentCheckbox:checked{border-color:var(--accent); background-color:rgba(93,215,239,0.1)}
+    .paymentCheckbox:disabled{opacity:1; cursor:default}
+    .paymentCheckbox::after{
+      content:""; 
+      position:absolute;
+      top:45%; left:50%;
+      transform:translate(-50%, -50%) rotate(45deg);
+      width:3px; height:7px;
+      border:solid var(--accent);
+      border-width:0 2px 2px 0;
+      opacity:0; transition:opacity .2s ease;
+    }
     .paymentCheckbox:checked::after{opacity:1}
     .lessonMetaRow{display:flex; align-items:center; gap:10px}
     
