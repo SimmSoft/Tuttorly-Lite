@@ -1614,9 +1614,10 @@
 
       if(isOff) dayCard.classList.add('dayOff');
       if(lessonsToShow.length === 0){
+        if(isOff) lessonsList.classList.add('emptyOff');
         const emptyMsg = document.createElement('div');
         emptyMsg.className = 'emptyLessonMsg';
-        emptyMsg.textContent = isOff ? 'Wolne' : 'Brak zajęć';
+        emptyMsg.textContent = isOff ? 'Dzień wolny' : 'Brak zajęć';
         lessonsList.appendChild(emptyMsg);
       } else {
         lessonsToShow.forEach(lesson => {
@@ -1820,14 +1821,14 @@
     
     let html = `<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px">`;
     html += `<div><h3 style="margin:0 0 4px 0">${dayNames[jsDay]} ${dayNum} ${MONTHS_PL[month]}</h3>`;
-    html += `<p style="color:var(--muted); font-size:12px; margin:0">${isOff ? '☕ Wolne' : (tempChange ? '⚙️ Zmiana tymczasowa' : 'Plan stały')}</p></div>`;
+    html += `<p style="color:var(--muted); font-size:12px; margin:0">${isOff ? '☕ Dzień wolny' : (tempChange ? '⚙️ Zmiana tymczasowa' : 'Plan stały')}</p></div>`;
     if(tempChange){
       html += `<button class="btn ghost" style="position:relative; min-width:120px; padding:6px 12px; white-space:nowrap; flex-shrink:0" onclick="removeTempChange('${dateStr}'); this.closest('.dialog-wrap').remove()">↺ Przywróć</button>`;
     }
     html += `</div>`;
     
     if(lessons.length === 0){
-      html += `<p style="color:var(--muted); text-align:center">${isOff ? 'Wolne' : 'Brak zajęć'}</p>`;
+      html += `<p style="color:var(--muted); text-align:center">${isOff ? 'Dzień wolny' : 'Brak zajęć'}</p>`;
     } else {
       html += `<div style="display:flex; flex-direction:column; gap:8px">`;
       lessons.forEach(lesson => {
