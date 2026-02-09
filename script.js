@@ -6,6 +6,10 @@
   let currentView = 'students';
   let pendingDeleteId = null;
   let tempChangeFromDayPopup = false;
+  let timeOffStart = null;
+  let timeOffEnd = null;
+  let timeOffDisplayMonth = new Date().getMonth();
+  let timeOffDisplayYear = new Date().getFullYear();
 
   // --- Safe History helpers (no-ops on sandbox/about:srcdoc) ---
   function canUseHistory(){
@@ -1296,6 +1300,7 @@
   function normalizeTempChanges(changes){
     return (changes || []).map(tc => ({
       ...tc,
+      isOff: !!tc.isOff,
       lessons: (tc.lessons || []).map(normalizeLesson)
     }));
   }
@@ -1406,6 +1411,88 @@
   function getDateStr(date){
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   }
+  function parseDateInput(val){
+    if(!val) return null;
+    const [y,m,d] = val.split('-').map(Number);
+    if(!y || !m || !d) return null;
+    return new Date(y, m - 1, d);
+  }
+  function formatDateInput(date){
+    if(!date) return '';
+    return getDateStr(date);
+  }
+  function addDays(date, days){
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d;
+  }
+  function addMonths(date, months){
+    const d = new Date(date);
+    const day = d.getDate();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + months);
+    const maxDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+    d.setDate(Math.min(day, maxDay));
+    return d;
+  }
+  function isSameDay(a, b){
+    if(!a || !b) return false;
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+  function getRangeDays(start, end){
+    if(!start || !end) return 0;
+    const s = new Date(start); s.setHours(0,0,0,0);
+    const e = new Date(end); e.setHours(0,0,0,0);
+    return Math.round((e - s) / 86400000) + 1;
+  }
+  function getTimeOffRanges(){
+    const tempChanges = loadTempChanges().filter(tc => tc.isOff && tc.date);
+    const uniqueDates = Array.from(new Set(tempChanges.map(tc => tc.date))).sort();
+    const ranges = [];
+    let rangeStart = null;
+    let prevDate = null;
+    uniqueDates.forEach(dateStr => {
+      const d = new Date(dateStr + 'T00:00:00');
+      if(!rangeStart){
+        rangeStart = d;
+        prevDate = d;
+        return;
+      }
+      const expected = addDays(prevDate, 1);
+      if(isSameDay(d, expected)){
+        prevDate = d;
+        return;
+      }
+      ranges.push({ start: rangeStart, end: prevDate, days: getRangeDays(rangeStart, prevDate) });
+      rangeStart = d;
+      prevDate = d;
+    });
+    if(rangeStart){
+      ranges.push({ start: rangeStart, end: prevDate, days: getRangeDays(rangeStart, prevDate) });
+    }
+    return ranges;
+  }
+  function renderNextTimeOffInfo(){
+    const wrap = el('nextTimeOffInfo');
+    const rangeEl = el('nextTimeOffRange');
+    const metaEl = el('nextTimeOffMeta');
+    if(!wrap || !rangeEl || !metaEl) return;
+    const ranges = getTimeOffRanges();
+    if(ranges.length === 0){
+      wrap.style.display = 'none';
+      return;
+    }
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const upcoming = ranges.find(r => r.end >= today);
+    if(!upcoming){
+      wrap.style.display = 'none';
+      return;
+    }
+    wrap.style.display = 'flex';
+    rangeEl.textContent = `${formatDatePL(upcoming.start)} – ${formatDatePL(upcoming.end)}`;
+    metaEl.textContent = `(${upcoming.days} dni)`;
+  }
   function getLessonsForDate(date){
     const staticPlan = loadStaticPlan();
     const tempChanges = loadTempChanges();
@@ -1512,6 +1599,7 @@
 
       // Find temp changes for this specific date in current week
       const tempChange = tempChanges.find(tc => tc.date === dateStr);
+      const isOff = !!tempChange?.isOff;
 
       const lessonsToShow = tempChange?.lessons || dayData.lessons;
 
@@ -1524,10 +1612,11 @@
       const lessonsList = document.createElement('div');
       lessonsList.className = 'lessonsList';
 
+      if(isOff) dayCard.classList.add('dayOff');
       if(lessonsToShow.length === 0){
         const emptyMsg = document.createElement('div');
         emptyMsg.className = 'emptyLessonMsg';
-        emptyMsg.textContent = 'Brak zajęć';
+        emptyMsg.textContent = isOff ? 'Wolne' : 'Brak zajęć';
         lessonsList.appendChild(emptyMsg);
       } else {
         lessonsToShow.forEach(lesson => {
@@ -1555,6 +1644,7 @@
       dayCard.appendChild(lessonsList);
       container.appendChild(dayCard);
     });
+    renderNextTimeOffInfo();
   }
 
   // ===== MONTHLY CALENDAR STATE =====
@@ -1606,12 +1696,14 @@
         nextMonthDay++;
       }
       
+      let tempChange = null;
+      let dateStr = null;
       const cell = document.createElement('div');
       cell.className = 'dayCell';
       if(!isCurrentMonth) cell.classList.add('otherMonth');
       
       if(isCurrentMonth){
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+        dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
         
         // Check if this is today
         const today = new Date();
@@ -1620,8 +1712,10 @@
         }
         
         // Check for temp changes
-        const hasChange = tempChanges.some(tc => tc.date === dateStr);
+        tempChange = tempChanges.find(tc => tc.date === dateStr);
+        const hasChange = !!tempChange;
         if(hasChange) cell.classList.add('hasChange');
+        if(tempChange?.isOff) cell.classList.add('offDay');
         
         // Add click handler for current month days
         cell.addEventListener('click', () => showDayPopup(dateStr, dayNum, month, year));
@@ -1644,9 +1738,6 @@
         const planDay = staticPlan.find(d => d.dayNum === dayOfWeek);
         
         // Check for temp changes
-        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
-        const tempChange = tempChanges.find(tc => tc.date === dateStr);
-        
         // Get actual lessons (temp changes take priority)
         const lessons = tempChange?.lessons || planDay?.lessons || [];
         
@@ -1716,6 +1807,7 @@
     // Get plan for this day
     const planDay = staticPlan.find(d => d.dayNum === dayOfWeek);
     const tempChange = tempChanges.find(tc => tc.date === dateStr);
+    const isOff = !!tempChange?.isOff;
     const lessons = tempChange?.lessons || planDay?.lessons || [];
     
     // Create popup
@@ -1728,14 +1820,14 @@
     
     let html = `<div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:8px">`;
     html += `<div><h3 style="margin:0 0 4px 0">${dayNames[jsDay]} ${dayNum} ${MONTHS_PL[month]}</h3>`;
-    html += `<p style="color:var(--muted); font-size:12px; margin:0">${tempChange ? '⚙️ Zmiana tymczasowa' : 'Plan stały'}</p></div>`;
+    html += `<p style="color:var(--muted); font-size:12px; margin:0">${isOff ? '☕ Wolne' : (tempChange ? '⚙️ Zmiana tymczasowa' : 'Plan stały')}</p></div>`;
     if(tempChange){
       html += `<button class="btn ghost" style="position:relative; min-width:120px; padding:6px 12px; white-space:nowrap; flex-shrink:0" onclick="removeTempChange('${dateStr}'); this.closest('.dialog-wrap').remove()">↺ Przywróć</button>`;
     }
     html += `</div>`;
     
     if(lessons.length === 0){
-      html += `<p style="color:var(--muted); text-align:center">Brak zajęć</p>`;
+      html += `<p style="color:var(--muted); text-align:center">${isOff ? 'Wolne' : 'Brak zajęć'}</p>`;
     } else {
       html += `<div style="display:flex; flex-direction:column; gap:8px">`;
       lessons.forEach(lesson => {
@@ -1775,6 +1867,8 @@
     localStorage.setItem(tempChangesKey, JSON.stringify(filtered));
     renderWeek();
     renderMonthCalendar();
+    renderNextTimeOffInfo();
+    renderTimeOffList();
   }
   
   function openTempChangeForDate(dateStr){
@@ -2177,6 +2271,178 @@
     el('tempChangePlanWrap').style.display = 'none';
     renderWeek();
     renderMonthCalendar();
+    renderNextTimeOffInfo();
+    renderTimeOffList();
+  }
+
+  // ===== TIME OFF RANGE FUNCTIONS =====
+  function setTimeOffRange(start, end){
+    let s = start ? new Date(start) : null;
+    let e = end ? new Date(end) : null;
+    if(s) s.setHours(0,0,0,0);
+    if(e) e.setHours(0,0,0,0);
+    if(s && e && e < s){
+      const tmp = s; s = e; e = tmp;
+    }
+    timeOffStart = s;
+    timeOffEnd = e;
+    const startInput = el('timeOffStart');
+    const endInput = el('timeOffEnd');
+    if(startInput) startInput.value = formatDateInput(timeOffStart);
+    if(endInput) endInput.value = formatDateInput(timeOffEnd);
+    if(timeOffStart){
+      timeOffDisplayMonth = timeOffStart.getMonth();
+      timeOffDisplayYear = timeOffStart.getFullYear();
+    }
+    renderTimeOffCalendar(timeOffDisplayYear, timeOffDisplayMonth);
+  }
+
+  function handleTimeOffDateClick(date){
+    const d = new Date(date);
+    d.setHours(0,0,0,0);
+    if(!timeOffStart || (timeOffStart && timeOffEnd)){
+      setTimeOffRange(d, null);
+      return;
+    }
+    if(d < timeOffStart){
+      setTimeOffRange(d, timeOffStart);
+    } else {
+      setTimeOffRange(timeOffStart, d);
+    }
+  }
+
+  function renderTimeOffCalendar(year, month){
+    const monthNames = ['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];
+    const monthEl = el('timeOffMonth');
+    const yearEl = el('timeOffYear');
+    if(monthEl) monthEl.textContent = monthNames[month];
+    if(yearEl) yearEl.textContent = year;
+
+    const container = el('timeOffCalendar');
+    if(!container) return;
+    container.innerHTML = '';
+    const today = new Date();
+    const firstDay = new Date(year, month, 1);
+    const startDate = new Date(firstDay);
+    const offset = (firstDay.getDay() - 1 + 7) % 7;
+    startDate.setDate(startDate.getDate() - offset);
+
+    for(let i = 0; i < 42; i++){
+      const date = new Date(startDate);
+      date.setDate(date.getDate() + i);
+
+      const btn = document.createElement('button');
+      btn.textContent = date.getDate();
+      if(date.getMonth() !== month) btn.classList.add('other-month');
+      if(isSameDay(date, today)) btn.classList.add('today');
+
+      const inRange = timeOffStart && timeOffEnd && date >= timeOffStart && date <= timeOffEnd;
+      if(inRange) btn.classList.add('in-range');
+      if(timeOffStart && isSameDay(date, timeOffStart)) btn.classList.add('range-start');
+      if(timeOffEnd && isSameDay(date, timeOffEnd)) btn.classList.add('range-end');
+
+      btn.onclick = () => handleTimeOffDateClick(date);
+      container.appendChild(btn);
+    }
+  }
+
+  function applyTimeOffLength(){
+    const len = parseInt(el('timeOffLength')?.value, 10);
+    if(!len || len < 1) return;
+    const unit = el('timeOffUnit')?.value || 'days';
+    let start = timeOffStart || parseDateInput(el('timeOffStart')?.value) || new Date();
+    start.setHours(0,0,0,0);
+    let end = null;
+    if(unit === 'months'){
+      end = addMonths(start, len);
+      end = addDays(end, -1);
+    } else {
+      const days = unit === 'weeks' ? len * 7 : len;
+      end = addDays(start, days - 1);
+    }
+    setTimeOffRange(start, end);
+  }
+
+  function saveTimeOffRange(){
+    if(!timeOffStart || !timeOffEnd){
+      alert('Wybierz zakres dat.');
+      return;
+    }
+    const tempChanges = loadTempChanges();
+    const current = new Date(timeOffStart);
+    current.setHours(0,0,0,0);
+    const end = new Date(timeOffEnd);
+    end.setHours(0,0,0,0);
+
+    while(current <= end){
+      const dateStr = getDateStr(current);
+      const idx = tempChanges.findIndex(tc => tc.date === dateStr);
+      const entry = { date: dateStr, lessons: [], isOff: true };
+      if(idx >= 0){
+        tempChanges[idx] = { ...tempChanges[idx], ...entry };
+      } else {
+        tempChanges.push(entry);
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    localStorage.setItem(tempChangesKey, JSON.stringify(tempChanges));
+    renderWeek();
+    renderMonthCalendar();
+    renderNextTimeOffInfo();
+    renderTimeOffList();
+    el('timeOffWrap').style.display = 'none';
+  }
+
+  function removeTimeOffRange(startStr, endStr){
+    const start = new Date(startStr + 'T00:00:00');
+    const end = new Date(endStr + 'T00:00:00');
+    const tempChanges = loadTempChanges();
+    const filtered = tempChanges.filter(tc => {
+      if(!tc.isOff) return true;
+      const d = new Date(tc.date + 'T00:00:00');
+      return d < start || d > end;
+    });
+    localStorage.setItem(tempChangesKey, JSON.stringify(filtered));
+    renderWeek();
+    renderMonthCalendar();
+    renderNextTimeOffInfo();
+    renderTimeOffList();
+  }
+
+  function renderTimeOffList(){
+    const list = el('timeOffList');
+    if(!list) return;
+    const ranges = getTimeOffRanges();
+    if(ranges.length === 0){
+      list.innerHTML = `<div class="muted" style="text-align:center; padding:6px 0">Brak zaplanowanych wolnych.</div>`;
+      return;
+    }
+    list.innerHTML = '';
+    ranges.forEach(r => {
+      const item = document.createElement('div');
+      item.className = 'timeOffItem';
+      const startStr = getDateStr(r.start);
+      const endStr = getDateStr(r.end);
+      item.innerHTML = `
+        <div>
+          <div>${formatDatePL(r.start)} – ${formatDatePL(r.end)}</div>
+          <div class="meta">${r.days} dni</div>
+        </div>
+        <button class="btn ghost" data-start="${startStr}" data-end="${endStr}">Usuń</button>
+      `;
+      const btn = item.querySelector('button[data-start]');
+      btn?.addEventListener('click', () => removeTimeOffRange(startStr, endStr));
+      list.appendChild(item);
+    });
+  }
+
+  function openTimeOffPopup(){
+    timeOffDisplayMonth = new Date().getMonth();
+    timeOffDisplayYear = new Date().getFullYear();
+    setTimeOffRange(null, null);
+    renderTimeOffCalendar(timeOffDisplayYear, timeOffDisplayMonth);
+    renderTimeOffList();
+    el('timeOffWrap').style.display = 'flex';
   }
 
   el('tempChangeCancelBtn')?.addEventListener('click', () => {
@@ -2193,6 +2459,34 @@
 
   el('tempChangeSaveBtn')?.addEventListener('click', () => {
     saveTempChange();
+  });
+
+  el('timeOffCancelBtn')?.addEventListener('click', () => {
+    el('timeOffWrap').style.display = 'none';
+  });
+
+  el('timeOffSaveBtn')?.addEventListener('click', () => {
+    saveTimeOffRange();
+  });
+
+  el('timeOffApplyLength')?.addEventListener('click', () => {
+    applyTimeOffLength();
+  });
+
+  el('timeOffStart')?.addEventListener('change', () => {
+    const start = parseDateInput(el('timeOffStart').value);
+    if(!start) return;
+    setTimeOffRange(start, timeOffEnd);
+  });
+
+  el('timeOffEnd')?.addEventListener('change', () => {
+    const end = parseDateInput(el('timeOffEnd').value);
+    if(!end) return;
+    if(!timeOffStart){
+      setTimeOffRange(end, null);
+      return;
+    }
+    setTimeOffRange(timeOffStart, end);
   });
 
   el('prevMonthBtn')?.addEventListener('click', () => {
@@ -2213,6 +2507,24 @@
     renderTempChangeCalendar(calendarDisplayYear, calendarDisplayMonth);
   });
 
+  el('timeOffPrevMonth')?.addEventListener('click', () => {
+    timeOffDisplayMonth--;
+    if(timeOffDisplayMonth < 0){
+      timeOffDisplayMonth = 11;
+      timeOffDisplayYear--;
+    }
+    renderTimeOffCalendar(timeOffDisplayYear, timeOffDisplayMonth);
+  });
+
+  el('timeOffNextMonth')?.addEventListener('click', () => {
+    timeOffDisplayMonth++;
+    if(timeOffDisplayMonth > 11){
+      timeOffDisplayMonth = 0;
+      timeOffDisplayYear++;
+    }
+    renderTimeOffCalendar(timeOffDisplayYear, timeOffDisplayMonth);
+  });
+
   // Close popups on background click
   el('editPlanWrap')?.addEventListener('click', (e) => {
     if(e.target === el('editPlanWrap')) el('editPlanWrap').style.display = 'none';
@@ -2222,9 +2534,14 @@
     if(e.target === el('tempChangePlanWrap')) el('tempChangePlanWrap').style.display = 'none';
   });
 
+  el('timeOffWrap')?.addEventListener('click', (e) => {
+    if(e.target === el('timeOffWrap')) el('timeOffWrap').style.display = 'none';
+  });
+
   // Event listeners for buttons
   el('editStaticPlanBtn')?.addEventListener('click', openEditStaticPlanPopup);
   el('addTempChangeBtn')?.addEventListener('click', openAddTempChangePopup);
+  el('addTimeOffBtn')?.addEventListener('click', openTimeOffPopup);
 
   // Monthly calendar navigation
   el('prevMonthCal')?.addEventListener('click', () => {

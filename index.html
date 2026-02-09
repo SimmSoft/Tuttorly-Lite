@@ -404,6 +404,33 @@
     .miniCalendar button.other-month{opacity:0.25; pointer-events:none}
     .miniCalendar button.today{border:1px solid var(--accent); color:var(--accent); font-weight:700; background:rgba(93,215,239,.12)}
     .miniCalendar button.selected{background:linear-gradient(145deg,rgba(93,215,239,.25),rgba(93,215,239,.15)); border-color:var(--accent); color:var(--accent); font-weight:700}
+    .miniCalendar button.in-range{background:rgba(93,215,239,.12); border-color:rgba(93,215,239,.35); color:var(--text)}
+    .miniCalendar button.range-start,
+    .miniCalendar button.range-end{background:linear-gradient(145deg,rgba(93,215,239,.35),rgba(93,215,239,.18)); border-color:var(--accent); color:var(--accent); font-weight:700}
+    #timeOffCalendar button.today{background:transparent; border:1px solid rgba(255,255,255,.9); color:var(--text); font-weight:600}
+    #timeOffCalendar button.today.range-start,
+    #timeOffCalendar button.today.range-end{background:linear-gradient(145deg,rgba(93,215,239,.35),rgba(93,215,239,.18)); border-color:var(--accent); color:var(--accent); font-weight:700}
+
+    .timeOffInfo{background:linear-gradient(145deg,rgba(139,92,246,.14),rgba(110,231,255,.1)); border:1px solid rgba(139,92,246,.25); border-radius:14px; padding:10px 12px; display:flex; flex-direction:column; gap:4px; margin:-4px 0 14px}
+    .timeOffLabel{font-size:11px; color:var(--muted); letter-spacing:.3px; text-transform:uppercase}
+    .timeOffRangeLine{display:flex; align-items:baseline; gap:6px}
+    .timeOffRange{font-weight:800; font-size:14px; color:var(--text)}
+    .timeOffMeta{font-size:12px; color:var(--muted)}
+    .timeOffMeta.inline{margin-left:8px; display:inline}
+
+    .timeOffQuick{display:flex; flex-direction:column; gap:8px; background:#131722; border:1px solid var(--border); border-radius:12px; padding:10px}
+    .timeOffQuick .row{display:grid; grid-template-columns:90px 1fr 1fr; gap:8px}
+    .timeOffQuick .hint{font-size:11px; color:var(--muted)}
+    .timeOffList{display:flex; flex-direction:column; gap:8px}
+    .timeOffItem{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 10px; border:1px solid var(--border); border-radius:10px; background:#131722}
+    .timeOffItem .meta{font-size:12px; color:var(--muted)}
+    .dayCell.offDay{background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.18)}
+    .dayCell.offDay::before{content:'☕'; position:absolute; top:2px; right:2px; font-size:10px}
+    .dayCell.today.offDay{border:1px solid var(--accent); background:rgba(93,215,239,.12)}
+    .dayCard.dayOff{border:1px solid rgba(255,255,255,.22); background:rgba(255,255,255,.06)}
+    .dayCard.dayOff.today{border:1px solid var(--accent); background:rgba(93,215,239,.12)}
+    .dayCard.dayOff.today .dayHeader{color:var(--accent)}
+    .dayCard.dayOff.today .emptyLessonMsg{color:var(--accent)}
 
     /* SETTINGS MODAL */
     .settings-dialog-wrap{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.5); z-index:50}
@@ -541,11 +568,19 @@
       <div class="view" id="terminyView">
         <!-- Week Schedule -->
         <h3 style="color:#fff; margin:12px 0 16px; letter-spacing:.3px; font-size:17px; text-align:center; background:linear-gradient(145deg, rgba(139,92,246,.15), rgba(110,231,255,.12)); padding:12px 20px; border-radius:14px; display:inline-block; width:100%; border:1px solid rgba(139,92,246,.2)">Plan Tego Tygodnia</h3>
+        <div class="timeOffInfo" id="nextTimeOffInfo" style="display:none">
+          <div class="timeOffLabel">☕ Najbliższe wolne</div>
+          <div class="timeOffRangeLine">
+            <span class="timeOffRange" id="nextTimeOffRange">—</span>
+            <span class="timeOffMeta inline" id="nextTimeOffMeta"></span>
+          </div>
+        </div>
         <div class="weekContainer" id="weekContainer"></div>
         
         <!-- Action Buttons -->
         <div class="terminyActions">
           <button class="terminyBtn" id="editStaticPlanBtn">📋 Edytuj plan stały</button>
+          <button class="terminyBtn" id="addTimeOffBtn">☕ Dni wolne</button>
           <button class="terminyBtn" id="addTempChangeBtn" style="display:none">➕ Dodaj zmianę</button>
         </div>
 
@@ -1002,6 +1037,48 @@
       <div class="planEditFooter">
         <button class="btn ghost" id="tempChangeCancelBtn" data-step1="Anuluj" data-step2="← Wróć">Anuluj</button>
         <button class="btn primary" id="tempChangeSaveBtn" style="display:none">Zapisz zmianę</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIME OFF RANGE POPUP -->
+  <div class="planEditWrap" id="timeOffWrap">
+    <div class="planEditDialog">
+      <h2>☕ Dni wolne</h2>
+      <div class="timeOffQuick">
+        <div class="row">
+          <input id="timeOffLength" type="number" min="1" placeholder="np. 7" />
+          <select id="timeOffUnit">
+            <option value="days">dni</option>
+            <option value="weeks">tygodnie</option>
+            <option value="months">miesiące</option>
+          </select>
+          <button class="btn primary" id="timeOffApplyLength">Ustaw od startu</button>
+        </div>
+        <div class="hint">Zakres liczony łącznie z dniem startu.</div>
+      </div>
+
+      <div class="row">
+        <input id="timeOffStart" type="date" />
+        <input id="timeOffEnd" type="date" />
+      </div>
+
+      <div class="calendarHeader">
+        <button class="calendarNav" id="timeOffPrevMonth">‹</button>
+        <div class="calendarMonthYear"><span id="timeOffMonth"></span> <span id="timeOffYear"></span></div>
+        <button class="calendarNav" id="timeOffNextMonth">›</button>
+      </div>
+      <div class="calendarWeekDays">
+        <div>Pon</div><div>Wto</div><div>Śro</div><div>Czw</div><div>Pią</div><div>Sob</div><div>Nie</div>
+      </div>
+      <div class="miniCalendar" id="timeOffCalendar"></div>
+
+      <div class="divider"><span>Aktualne wolne</span></div>
+      <div class="timeOffList" id="timeOffList"></div>
+
+      <div class="planEditFooter">
+        <button class="btn ghost" id="timeOffCancelBtn">Anuluj</button>
+        <button class="btn primary" id="timeOffSaveBtn">Zapisz wolne</button>
       </div>
     </div>
   </div>
