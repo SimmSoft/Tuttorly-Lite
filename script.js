@@ -1417,24 +1417,20 @@
       const weekStart = new Date(currentWeekStart);
       weekStart.setDate(currentWeekStart.getDate() - i * 7);
       const weekEnd = getWeekEnd(weekStart);
-      const studentIdsInWeek = new Set();
+      const paidSet = getPaidStudentIdsForRange(weekStart, weekEnd);
       for(let d = 0; d < 7; d++){
         const day = new Date(weekStart);
         day.setDate(weekStart.getDate() + d);
-        getLessonsForDate(day).forEach(lesson => {
-          if(lesson.studentId) studentIdsInWeek.add(lesson.studentId);
+        const lessons = getLessonsForDate(day);
+        lessons.forEach(lesson => {
+          if(!lesson.studentId) return;
+          if(paidSet.has(lesson.studentId)) return;
+          result.push({
+            studentId: lesson.studentId,
+            dueDate: getDateStr(day)
+          });
         });
       }
-      if(studentIdsInWeek.size === 0) continue;
-      const paidSet = getPaidStudentIdsForRange(weekStart, weekEnd);
-      studentIdsInWeek.forEach(id => {
-        if(!paidSet.has(id)){
-          result.push({
-            studentId: id,
-            rangeLabel: `${formatDatePL(weekStart)}–${formatDatePL(weekEnd)}`
-          });
-        }
-      });
     }
     return result;
   }
@@ -1443,7 +1439,7 @@
     const header = el('overdueHeader');
     if(!list || !header) return;
     const dismissed = loadDismissedOverdues();
-    const entries = getOverdueEntries(3).filter(e => !dismissed.has(`${e.studentId}|${e.rangeLabel}`));
+    const entries = getOverdueEntries(3).filter(e => !dismissed.has(`${e.studentId}|${e.dueDate}`));
     if(entries.length === 0){
       list.style.display = 'none';
       header.style.display = 'none';
@@ -1457,14 +1453,22 @@
       const name = getStudentDisplayNameById(item.studentId) || 'Uczeń';
       const card = document.createElement('div');
       card.className = 'overdueItem';
+      const dueLabel = formatDatePL(new Date(item.dueDate + 'T00:00:00'));
       card.innerHTML = `
-        <div class="overdueText">${escapeHtml(name)} | ${item.rangeLabel} |</div>
-        <button class="overdueDismiss" data-dismiss="${item.studentId}|${item.rangeLabel}">x</button>`;
+        <div class="overdueText">${escapeHtml(name)} | ${dueLabel} |</div>
+        <button class="overdueDismiss" data-dismiss="${item.studentId}|${item.dueDate}">x</button>`;
       const dismissBtn = card.querySelector('button[data-dismiss]');
-      dismissBtn?.addEventListener('click', () => {
-        dismissed.add(`${item.studentId}|${item.rangeLabel}`);
+      dismissBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dismissed.add(`${item.studentId}|${item.dueDate}`);
         saveDismissedOverdues(dismissed);
         renderOverduePayments();
+      });
+      card.addEventListener('click', () => {
+        openIncomeDialog();
+        const dateInput = el('incomeDate');
+        if(dateInput) dateInput.value = item.dueDate;
+        setIncomeSelectedIds([item.studentId]);
       });
       list.appendChild(card);
     });
