@@ -296,6 +296,13 @@
   function normalizeText(str){ return (str||'').toString().toLowerCase(); }
   function getStudentById(id){ return state.students.find(s => s.id === id); }
   function getStudentDisplayNameById(id){ const s = getStudentById(id); return s ? s.name : ''; }
+  function getStudentActivePriceById(id){
+    const s = getStudentById(id);
+    if(!s) return 0;
+    const key = (s.active?.type === 'station' ? 'station' : 'remote') + String(s.active?.dur || 60);
+    const v = s.pricing?.[key] ?? 0;
+    return Number(v) || 0;
+  }
   function getLessonDisplayName(lesson){
     if(lesson && lesson.studentId){ const name = getStudentDisplayNameById(lesson.studentId); if(name) return name; }
     if(lesson && lesson.customName) return lesson.customName;
@@ -1454,8 +1461,10 @@
       const card = document.createElement('div');
       card.className = 'overdueItem';
       const dueLabel = formatDatePL(new Date(item.dueDate + 'T00:00:00'));
+      const price = getStudentActivePriceById(item.studentId);
+      const priceLabel = price ? formatPLN(price) : '—';
       card.innerHTML = `
-        <div class="overdueText">${escapeHtml(name)} | ${dueLabel} |</div>
+        <div class="overdueText">${dueLabel} • ${escapeHtml(name)} • ${priceLabel}</div>
         <button class="overdueDismiss" data-dismiss="${item.studentId}|${item.dueDate}">x</button>`;
       const dismissBtn = card.querySelector('button[data-dismiss]');
       dismissBtn?.addEventListener('click', (e) => {
