@@ -322,6 +322,9 @@
     .planEditDialog{width:100%; max-width:680px; background:#0f1218; border:1px solid var(--border); border-radius:16px; padding:14px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:12px}
     #editPlanDaySelector{display:grid; grid-template-columns:1fr 1fr; gap:8px; max-height:56vh; overflow-y:auto; padding-right:2px}
     .planEditDialog h2{margin:0 0 8px 0; font-size:18px; color:var(--text)}
+    .timeOffTitle{display:flex; align-items:center; justify-content:center; position:relative; width:100%; text-align:center}
+    .timeOffTitle::before{content:'☕'; position:absolute; left:0}
+    .timeOffTitle::after{content:'☕'; position:absolute; right:0}
     .dayColumnGrid{display:grid; grid-template-columns:1fr; gap:8px; max-height:auto; overflow-y:auto}
     .dayColumn{background:#1a1e27; border:1px solid var(--border); border-radius:10px; padding:8px; display:flex; flex-direction:column; gap:6px}
     .dayColumn h3{margin:0 0 6px 0; font-size:13px; color:var(--accent); font-weight:700}
@@ -1044,7 +1047,7 @@
   <!-- TIME OFF RANGE POPUP -->
   <div class="planEditWrap" id="timeOffWrap">
     <div class="planEditDialog">
-      <h2>☕ Dni wolne</h2>
+      <h2 class="timeOffTitle">Dni wolne</h2>
       <div class="timeOffQuick">
         <div class="row">
           <input id="timeOffLength" type="number" min="1" placeholder="np. 7" />

@@ -75,6 +75,7 @@
       }
       renderStats();
       renderEarnings();
+      renderWeek();
     } else if(tabName === 'terminy'){
       if(fab) fab.style.display='none';
     } else {
@@ -1111,6 +1112,7 @@
     closeIncomeDialog();
     renderStats();
     renderEarnings();
+    renderWeek();
   });
 
   el('incomeDeleteBtn')?.addEventListener('click', () => {
