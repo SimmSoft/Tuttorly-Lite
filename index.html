@@ -322,6 +322,20 @@
     .planEditDialog{width:100%; max-width:680px; background:#0f1218; border:1px solid var(--border); border-radius:16px; padding:14px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:12px}
     #editPlanDaySelector{display:grid; grid-template-columns:1fr 1fr; gap:8px; max-height:56vh; overflow-y:auto; padding-right:2px}
     .planEditDialog h2{margin:0 0 8px 0; font-size:18px; color:var(--text)}
+    .studentDialogTitle{display:flex; align-items:center; justify-content:center; position:relative; width:100%; text-align:center}
+    .studentDialogTitle::before{content:'✍️'; position:absolute; left:0}
+    .studentDialogTitle::after{content:'✍️'; position:absolute; right:0}
+    .studentFooter{display:flex; gap:8px; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-top:12px}
+    .studentFooter .btn{height:40px; padding:0 14px; border-radius:10px; border:1px solid var(--border); background:#1a1e27; color:var(--text); font-weight:700}
+    .studentFooter .btn.primary{background:linear-gradient(145deg,#1a2847,#0f1626); border:none}
+    .studentFooter .btn.ghost{background:transparent}
+    .studentFooter .btn.danger{background:linear-gradient(145deg,#b91c1c,#7f1d1d); border:none}
+    .studentInfoRow{display:grid; grid-template-columns:84px 1fr; gap:4px; align-items:start}
+    .studentInfoFields{display:flex; flex-direction:column; gap:3px}
+    .avatarTile{width:72px; height:72px; border-radius:18px; border:1px dashed var(--border); display:grid; place-items:center; background:#0f1218; cursor:pointer; align-self:start; margin-top:0}
+    .studentInfoRow .row{margin:0}
+    .studentInfoRow .notesRow{grid-column:1 / -1}
+    .avatarTile:hover{background:#121622}
     .timeOffTitle{display:flex; align-items:center; justify-content:center; position:relative; width:100%; text-align:center}
     .timeOffTitle::before{content:'☕'; position:absolute; left:0}
     .timeOffTitle::after{content:'☕'; position:absolute; right:0}
@@ -350,7 +364,7 @@
     .addLessonBtn{background:rgba(93,215,239,.15); border:1px dashed var(--accent); color:var(--accent); padding:6px; border-radius:8px; cursor:pointer; font-size:10px; font-weight:600; transition:all .15s ease; margin-top:2px}
     .addLessonBtn:hover{background:rgba(93,215,239,.25)}
 
-    .lessonPaymentCheck{display:flex; align-items:center}
+    .lessonPaymentCheck{display:flex; align-items:center; flex-shrink:0}
     .paymentCheckbox{
       appearance:none; -webkit-appearance:none;
       width:14px; height:14px;
@@ -377,7 +391,10 @@
       opacity:0; transition:opacity .2s ease;
     }
     .paymentCheckbox:checked::after{opacity:1}
-    .lessonMetaRow{display:flex; align-items:center; gap:10px}
+    .lessonMetaRow{display:flex; align-items:center; gap:8px; flex-wrap:nowrap}
+    .activeTypeGroup, .activeDurGroup{display:flex; gap:6px; border:1px solid var(--border); border-radius:10px; background:#0a0d12; padding:3px}
+    .activeTypeBtn, .activeDurBtn{padding:8px 12px; border:none; border-radius:8px; cursor:pointer; background:transparent; color:var(--muted); font-weight:600; font-size:12px; transition:all .15s ease; white-space:nowrap}
+    .activeTypeBtn.active, .activeDurBtn.active{background:linear-gradient(145deg,#1a2847,#0f1626); color:var(--text)}
     
     /* DAY SELECTOR BUTTONS */
     .editPlanDayButton{background:#1a1e27; border:1px solid var(--border); color:var(--text); padding:10px 12px; border-radius:10px; cursor:pointer; font-weight:600; font-size:12px; transition:all .15s ease; text-align:center}
@@ -776,26 +793,34 @@
   <!-- DIALOG -->
   <div class="dialog-wrap" id="dialogWrap">
     <div class="dialog">
-      <h3 id="dialogTitle">Nowy uczeń</h3>
-      <div class="row"><input id="sName" placeholder="Imię i nazwisko" /></div>
-      <div class="row"><input id="sPlace" placeholder="Miejsce (miasto, ulica)" /></div>
-      <div class="row"><textarea id="sNotes" placeholder="Notatki"></textarea></div>
-
-      <h3 style="margin-top:8px">Media</h3>
-      <div class="row">
-        <div id="avatarUpload" class="upload">
+      <h3 id="dialogTitle" class="studentDialogTitle">Nowy uczeń</h3>
+      <div class="studentInfoRow">
+        <div id="avatarUpload" class="avatarTile" title="Kliknij, aby wybrać avatar">
           <div id="avatarPreview" class="avatar big"></div>
-          <div class="sp">
-            <div class="name">Avatar (opcjonalnie)</div>
-            <div id="avatarHint" class="hint">PNG/JPG — kliknij, aby wybrać</div>
-          </div>
-          <button type="button" id="avatarPick" class="mini btn primary">Wybierz</button>
         </div>
-        <input type="file" id="sAvatar" accept="image/*" style="display:none" />
-        <b id="avatarInfo" style="display:none">(opcjonalnie)</b>
+        <div class="studentInfoFields">
+          <div class="row"><input id="sName" placeholder="Imię i nazwisko" /></div>
+          <div class="row"><input id="sPlace" placeholder="Miejsce (miasto, ulica)" /></div>
+          <div class="row notesRow"><textarea id="sNotes" placeholder="Notatki"></textarea></div>
+        </div>
+      </div>
+      <input type="file" id="sAvatar" accept="image/*" style="display:none" />
+      <b id="avatarInfo" style="display:none">(opcjonalnie)</b>
+
+      <div class="divider"><span>Aktywne zajęcia (domyślne)</span></div>
+      <div class="row" style="gap:10px">
+        <div class="activeTypeGroup">
+          <button type="button" class="activeTypeBtn" data-type="remote">Zdalne</button>
+          <button type="button" class="activeTypeBtn" data-type="station">Stacjonarne</button>
+        </div>
+        <div class="activeDurGroup">
+          <button type="button" class="activeDurBtn" data-dur="60">60 min</button>
+          <button type="button" class="activeDurBtn" data-dur="90">90 min</button>
+          <button type="button" class="activeDurBtn" data-dur="120">120 min</button>
+        </div>
       </div>
 
-      <h3 style="margin-top:8px">Cennik (PLN)</h3>
+      <div class="divider" style="margin-top:8px"><span>Cennik (PLN)</span></div>
       <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:8px; padding:0 8px">
         <div style="font-weight:600; font-size:13px; color:var(--muted); text-align:center; flex:1">ZDALNE</div>
         <div style="font-weight:600; font-size:13px; color:var(--muted); text-align:center; width:80px"></div>
@@ -819,22 +844,9 @@
         </div>
       </div>
 
-      <h3 style="margin-top:8px">Aktywne zajęcia (domyślne)</h3>
-      <div class="row">
-        <select id="activeType">
-          <option value="remote">Zdalne</option>
-          <option value="station">Stacjonarne</option>
-        </select>
-        <select id="activeDur">
-          <option value="60">60 min</option>
-          <option value="90">90 min</option>
-          <option value="120">120 min</option>
-        </select>
-      </div>
-
-      <div class="footer">
+      <div class="studentFooter">
         <button class="btn danger" id="deleteBtn" style="display:none">Usuń ucznia</button>
-        <div class="footerRight">
+        <div style="display:flex; gap:8px; margin-left:auto">
           <button class="btn ghost" id="cancelDialog">Anuluj</button>
           <button class="btn primary" id="confirmDialog">Zapisz</button>
         </div>

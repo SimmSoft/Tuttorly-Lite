@@ -478,10 +478,32 @@
     prev.textContent=initials;
   }
 
+  function setActiveButtons(type, dur){
+    document.querySelectorAll('.activeTypeBtn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.type === type);
+    });
+    document.querySelectorAll('.activeDurBtn').forEach(btn => {
+      btn.classList.toggle('active', String(btn.dataset.dur) === String(dur));
+    });
+  }
+
+  document.querySelectorAll('.activeTypeBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.activeTypeBtn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+  document.querySelectorAll('.activeDurBtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.activeDurBtn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
   function openDialog(editId){ if(!dialog) return; dialog.style.display='flex';
     const title=el('dialogTitle'); const sName=el('sName'); const sPlace=el('sPlace'); const sNotes=el('sNotes');
     const pR60=el('priceR60'); const pR90=el('priceR90'); const pR120=el('priceR120'); const pS60=el('priceS60'); const pS90=el('priceS90'); const pS120=el('priceS120');
-    const aInfo=el('avatarInfo'); const aType=el('activeType'); const aDur=el('activeDur'); const delBtn=el('deleteBtn');
+    const aInfo=el('avatarInfo'); const delBtn=el('deleteBtn');
 
     if(editId){ const s=state.students.find(x=>x.id===editId); if(!s) return;
       title && (title.textContent='Edytuj ucznia'); sName && (sName.value=s.name||''); sPlace && (sPlace.value=s.place||''); sNotes && (sNotes.value=s.notes||'');
@@ -489,13 +511,13 @@
       pS60 && (pS60.value=s.pricing?.station60??''); pS90 && (pS90.value=s.pricing?.station90??''); pS120 && (pS120.value=s.pricing?.station120??'');
       setPricingPlaceholders();
       aInfo && (aInfo.textContent=s.avatar?'ustawiono':'(opcjonalnie)');
-      aType && (aType.value=s.active?.type||'remote'); aDur && (aDur.value=String(s.active?.dur||60)); dialog.dataset.editId=editId;
+      setActiveButtons(s.active?.type||'remote', s.active?.dur||60); dialog.dataset.editId=editId;
       if(delBtn) delBtn.style.display='inline-flex';
       updateAvatarPreviewFrom(s.name, s.avatar);
     } else {
       title && (title.textContent='Nowy uczeń'); sName && (sName.value=''); sPlace && (sPlace.value=''); sNotes && (sNotes.value='');
       pR60 && (pR60.value=''); pR90 && (pR90.value=''); pR120 && (pR120.value=''); pS60 && (pS60.value=''); pS90 && (pS90.value=''); pS120 && (pS120.value='');
-      aInfo && (aInfo.textContent='(opcjonalnie)'); aType && (aType.value='remote'); aDur && (aDur.value='60'); delete dialog.dataset.editId;
+      aInfo && (aInfo.textContent='(opcjonalnie)'); setActiveButtons('remote', 60); delete dialog.dataset.editId;
       if(delBtn) delBtn.style.display='none';
       updateAvatarPreviewFrom('', null);
     }
@@ -693,7 +715,10 @@
     const place=el('sPlace')?.value.trim(); const notes=el('sNotes')?.value.trim();
     let pricing={ remote60:numOrNull(el('priceR60')?.value), remote90:numOrNull(el('priceR90')?.value), remote120:numOrNull(el('priceR120')?.value), station60:numOrNull(el('priceS60')?.value), station90:numOrNull(el('priceS90')?.value), station120:numOrNull(el('priceS120')?.value)};
     pricing = applyDefaultPricing(pricing);
-    const avatar=el('avatarInfo')?.dataset.dataurl; const active={ type:el('activeType')?.value, dur:Number(el('activeDur')?.value) };
+    const avatar=el('avatarInfo')?.dataset.dataurl;
+    const activeTypeBtn = document.querySelector('.activeTypeBtn.active');
+    const activeDurBtn = document.querySelector('.activeDurBtn.active');
+    const active={ type:activeTypeBtn?.dataset.type || 'remote', dur:Number(activeDurBtn?.dataset.dur || 60) };
 
     if(dialog?.dataset.editId){
       const s=state.students.find(x=>x.id===dialog.dataset.editId); if(!s) return; s.name=name; s.place=place; s.notes=notes; s.pricing={...(s.pricing||{}),...pricing}; s.active=active; if(avatar) s.avatar=avatar; save(); if(currentId===s.id){ selectStudent(s.id);} }
@@ -2079,8 +2104,6 @@
           <button type="button" class="durationBtn ${duration === 60 ? 'active' : ''}" data-duration="60">60</button>
           <button type="button" class="durationBtn ${duration === 90 ? 'active' : ''}" data-duration="90">90</button>
           <button type="button" class="durationBtn ${duration === 120 ? 'active' : ''}" data-duration="120">120</button>
-          <button type="button" class="durationBtn ${duration === 150 ? 'active' : ''}" data-duration="150">150</button>
-          <button type="button" class="durationBtn ${duration === 180 ? 'active' : ''}" data-duration="180">180</button>
         </div>
       </div>
       <div class="lessonRowTypeStudent">
