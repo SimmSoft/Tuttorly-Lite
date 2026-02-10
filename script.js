@@ -1,5 +1,6 @@
   const storeKey = 'tuttorly.v11';
   const el = id => document.getElementById(id);
+  const defaultPricingKey = 'tuttorly.defaultPricing';
 
   let state = load();
   let currentId = null;
@@ -486,6 +487,7 @@
       title && (title.textContent='Edytuj ucznia'); sName && (sName.value=s.name||''); sPlace && (sPlace.value=s.place||''); sNotes && (sNotes.value=s.notes||'');
       pR60 && (pR60.value=s.pricing?.remote60??''); pR90 && (pR90.value=s.pricing?.remote90??''); pR120 && (pR120.value=s.pricing?.remote120??'');
       pS60 && (pS60.value=s.pricing?.station60??''); pS90 && (pS90.value=s.pricing?.station90??''); pS120 && (pS120.value=s.pricing?.station120??'');
+      setPricingPlaceholders();
       aInfo && (aInfo.textContent=s.avatar?'ustawiono':'(opcjonalnie)');
       aType && (aType.value=s.active?.type||'remote'); aDur && (aDur.value=String(s.active?.dur||60)); dialog.dataset.editId=editId;
       if(delBtn) delBtn.style.display='inline-flex';
@@ -689,7 +691,8 @@
   el('confirmDialog')?.addEventListener('click',()=>{
     const name=el('sName')?.value.trim(); if(!name){ alert('Podaj imię i nazwisko'); return; }
     const place=el('sPlace')?.value.trim(); const notes=el('sNotes')?.value.trim();
-    const pricing={ remote60:numOrNull(el('priceR60')?.value), remote90:numOrNull(el('priceR90')?.value), remote120:numOrNull(el('priceR120')?.value), station60:numOrNull(el('priceS60')?.value), station90:numOrNull(el('priceS90')?.value), station120:numOrNull(el('priceS120')?.value)};
+    let pricing={ remote60:numOrNull(el('priceR60')?.value), remote90:numOrNull(el('priceR90')?.value), remote120:numOrNull(el('priceR120')?.value), station60:numOrNull(el('priceS60')?.value), station90:numOrNull(el('priceS90')?.value), station120:numOrNull(el('priceS120')?.value)};
+    pricing = applyDefaultPricing(pricing);
     const avatar=el('avatarInfo')?.dataset.dataurl; const active={ type:el('activeType')?.value, dur:Number(el('activeDur')?.value) };
 
     if(dialog?.dataset.editId){
@@ -697,7 +700,11 @@
     else { const order=(state.students.reduce((m,x)=>Math.max(m,x.order??-1),-1)+1); state.students.push({id:uid(), order, name, place, notes, balance:0, pricing, avatar, active}); save(); }
     closeDialog(); renderList();
   });
-  function numOrNull(v){ const n=Number(v); return isNaN(n)? null:n; }
+  function numOrNull(v){
+    if(v === '' || v === null || v === undefined) return null;
+    const n = Number(v);
+    return isNaN(n) ? null : n;
+  }
 
   el('plus10')?.addEventListener('click',()=>applyDelta(10));
   el('minus10')?.addEventListener('click',()=>applyDelta(-10));
@@ -729,6 +736,20 @@
   // Settings modal handlers
   function openSettingsDialog(){ el('settingsDialogWrap').style.display='flex'; }
   function closeSettingsDialog(){ el('settingsDialogWrap').style.display='none'; }
+
+  function saveDefaultPricingFromSettings(){
+    const num = v => { const n = Number(v); return Number.isFinite(n) ? n : null; };
+    const pricing = {
+      remote60: num(el('defPriceR60')?.value),
+      remote90: num(el('defPriceR90')?.value),
+      remote120: num(el('defPriceR120')?.value),
+      station60: num(el('defPriceS60')?.value),
+      station90: num(el('defPriceS90')?.value),
+      station120: num(el('defPriceS120')?.value)
+    };
+    saveDefaultPricing(pricing);
+    setPricingPlaceholders();
+  }
   
     // Support modal handlers
   function openSupportDialog(){ el('supportDialogWrap').style.display='flex'; }
@@ -738,9 +759,13 @@
   el('supportCloseBtn')?.addEventListener('click', closeSupportDialog);
   el('supportDialogWrap')?.addEventListener('click', (e)=>{ if(e.target===el('supportDialogWrap')) closeSupportDialog(); });
 
-  el('settingsBtn')?.addEventListener('click', openSettingsDialog);
+  el('settingsBtn')?.addEventListener('click', ()=>{
+    hydrateDefaultPricingSettings();
+    openSettingsDialog();
+  });
 
   el('settingsCloseBtn')?.addEventListener('click', closeSettingsDialog);
+  el('saveDefaultPricingBtn')?.addEventListener('click', saveDefaultPricingFromSettings);
   el('settingsDialogWrap')?.addEventListener('click', (e)=>{ if(e.target===el('settingsDialogWrap')) closeSettingsDialog(); });
 
   // Calendar button (placeholder for future functionality)
@@ -1156,6 +1181,7 @@
   renderList();
   setView('list');
   updateMap('Polska');
+  setPricingPlaceholders();
 
   // (Optional) seed history when supported (no-op in sandbox)
   safeReplace(location.pathname + location.search, {screen:'list'});
@@ -1443,6 +1469,45 @@
     const d = new Date(date);
     d.setDate(d.getDate() + days);
     return d;
+  }
+  function loadDefaultPricing(){
+    const raw = localStorage.getItem(defaultPricingKey);
+    if(raw){
+      try{ return JSON.parse(raw); }catch{}
+    }
+    return { remote60:60, remote90:90, remote120:120, station60:70, station90:100, station120:140 };
+  }
+  function saveDefaultPricing(pricing){
+    localStorage.setItem(defaultPricingKey, JSON.stringify(pricing));
+  }
+  function applyDefaultPricing(pricing){
+    const def = loadDefaultPricing();
+    return {
+      remote60: (pricing.remote60 ?? def.remote60),
+      remote90: (pricing.remote90 ?? def.remote90),
+      remote120: (pricing.remote120 ?? def.remote120),
+      station60: (pricing.station60 ?? def.station60),
+      station90: (pricing.station90 ?? def.station90),
+      station120: (pricing.station120 ?? def.station120)
+    };
+  }
+  function setPricingPlaceholders(){
+    const def = loadDefaultPricing();
+    el('priceR60') && (el('priceR60').placeholder = String(def.remote60 ?? ''));
+    el('priceR90') && (el('priceR90').placeholder = String(def.remote90 ?? ''));
+    el('priceR120') && (el('priceR120').placeholder = String(def.remote120 ?? ''));
+    el('priceS60') && (el('priceS60').placeholder = String(def.station60 ?? ''));
+    el('priceS90') && (el('priceS90').placeholder = String(def.station90 ?? ''));
+    el('priceS120') && (el('priceS120').placeholder = String(def.station120 ?? ''));
+  }
+  function hydrateDefaultPricingSettings(){
+    const def = loadDefaultPricing();
+    el('defPriceR60') && (el('defPriceR60').value = def.remote60 ?? '');
+    el('defPriceR90') && (el('defPriceR90').value = def.remote90 ?? '');
+    el('defPriceR120') && (el('defPriceR120').value = def.remote120 ?? '');
+    el('defPriceS60') && (el('defPriceS60').value = def.station60 ?? '');
+    el('defPriceS90') && (el('defPriceS90').value = def.station90 ?? '');
+    el('defPriceS120') && (el('defPriceS120').value = def.station120 ?? '');
   }
   function addMonths(date, months){
     const d = new Date(date);

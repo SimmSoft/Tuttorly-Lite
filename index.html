@@ -803,19 +803,19 @@
       </div>
       <div style="display:flex; flex-direction:column; gap:10px">
         <div style="display:flex; align-items:center; justify-content:center; gap:16px">
-          <input class="price" id="priceR60" type="number" placeholder="60" style="flex:1; text-align:center" />
+          <input class="price" id="priceR60" type="number" placeholder="" style="flex:1; text-align:center" />
           <span style="font-size:13px; color:var(--muted); text-align:center; width:80px; font-weight:600">— 60 min —</span>
-          <input class="price" id="priceS60" type="number" placeholder="70" style="flex:1; text-align:center" />
+          <input class="price" id="priceS60" type="number" placeholder="" style="flex:1; text-align:center" />
         </div>
         <div style="display:flex; align-items:center; justify-content:center; gap:16px">
-          <input class="price" id="priceR90" type="number" placeholder="90" style="flex:1; text-align:center" />
+          <input class="price" id="priceR90" type="number" placeholder="" style="flex:1; text-align:center" />
           <span style="font-size:13px; color:var(--muted); text-align:center; width:80px; font-weight:600">— 90 min —</span>
-          <input class="price" id="priceS90" type="number" placeholder="100" style="flex:1; text-align:center" />
+          <input class="price" id="priceS90" type="number" placeholder="" style="flex:1; text-align:center" />
         </div>
         <div style="display:flex; align-items:center; justify-content:center; gap:16px">
-          <input class="price" id="priceR120" type="number" placeholder="120" style="flex:1; text-align:center" />
+          <input class="price" id="priceR120" type="number" placeholder="" style="flex:1; text-align:center" />
           <span style="font-size:13px; color:var(--muted); text-align:center; width:80px; font-weight:600">— 120 min —</span>
-          <input class="price" id="priceS120" type="number" placeholder="140" style="flex:1; text-align:center" />
+          <input class="price" id="priceS120" type="number" placeholder="" style="flex:1; text-align:center" />
         </div>
       </div>
 
@@ -975,6 +975,35 @@
             Eksportuj
           </button>
           <input id="settingsImportFile" type="file" accept="application/json" style="display:none" />
+        </div>
+      </div>
+
+      <div class="settings-section" style="border-top:1px solid var(--border); padding-top:16px; margin-top:16px">
+        <span class="settings-section-title">Domyślny cennik (PLN)</span>
+        <div style="display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:8px; padding:0 8px">
+          <div style="font-weight:600; font-size:13px; color:var(--muted); text-align:center; flex:1">ZDALNE</div>
+          <div style="font-weight:600; font-size:13px; color:var(--muted); text-align:center; width:80px"></div>
+          <div style="font-weight:600; font-size:13px; color:var(--muted); text-align:center; flex:1">STACJONARNE</div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px">
+          <div style="display:flex; align-items:center; justify-content:center; gap:16px">
+            <input class="price" id="defPriceR60" type="number" placeholder="60" style="flex:1; text-align:center" />
+            <span style="font-size:13px; color:var(--muted); text-align:center; width:80px; font-weight:600">— 60 min —</span>
+            <input class="price" id="defPriceS60" type="number" placeholder="70" style="flex:1; text-align:center" />
+          </div>
+          <div style="display:flex; align-items:center; justify-content:center; gap:16px">
+            <input class="price" id="defPriceR90" type="number" placeholder="90" style="flex:1; text-align:center" />
+            <span style="font-size:13px; color:var(--muted); text-align:center; width:80px; font-weight:600">— 90 min —</span>
+            <input class="price" id="defPriceS90" type="number" placeholder="100" style="flex:1; text-align:center" />
+          </div>
+          <div style="display:flex; align-items:center; justify-content:center; gap:16px">
+            <input class="price" id="defPriceR120" type="number" placeholder="120" style="flex:1; text-align:center" />
+            <span style="font-size:13px; color:var(--muted); text-align:center; width:80px; font-weight:600">— 120 min —</span>
+            <input class="price" id="defPriceS120" type="number" placeholder="140" style="flex:1; text-align:center" />
+          </div>
+        </div>
+        <div class="footer" style="margin-top:10px">
+          <button class="btn primary" id="saveDefaultPricingBtn">Zapisz domyślny cennik</button>
         </div>
       </div>
 
