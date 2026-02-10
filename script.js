@@ -308,6 +308,22 @@
     const v = s.pricing?.[key] ?? 0;
     return Number(v) || 0;
   }
+  function getLessonDurationMinutes(lesson){
+    if(!lesson?.startTime || !lesson?.endTime) return 0;
+    const start = new Date(`2000-01-01T${lesson.startTime}`);
+    const end = new Date(`2000-01-01T${lesson.endTime}`);
+    const diff = Math.round((end - start) / 60000);
+    return diff > 0 ? diff : 0;
+  }
+  function getLessonPriceForStudent(studentId, lesson){
+    const s = getStudentById(studentId);
+    if(!s) return 0;
+    const dur = getLessonDurationMinutes(lesson) || 0;
+    const typeKey = (lesson?.type === 'ST') ? 'station' : 'remote';
+    const key = typeKey + String(dur);
+    const v = s.pricing?.[key];
+    return Number(v) || 0;
+  }
   function getLessonDisplayName(lesson){
     if(lesson && lesson.studentId){ const name = getStudentDisplayNameById(lesson.studentId); if(name) return name; }
     if(lesson && lesson.customName) return lesson.customName;
@@ -1523,7 +1539,8 @@
           if(paidSet.has(lesson.studentId)) return;
           result.push({
             studentId: lesson.studentId,
-            dueDate: getDateStr(day)
+            dueDate: getDateStr(day),
+            lesson
           });
         });
       }
@@ -1550,7 +1567,7 @@
       const card = document.createElement('div');
       card.className = 'overdueItem';
       const dueLabel = formatDatePL(new Date(item.dueDate + 'T00:00:00'));
-      const price = getStudentActivePriceById(item.studentId);
+      const price = item.lesson ? getLessonPriceForStudent(item.studentId, item.lesson) : getStudentActivePriceById(item.studentId);
       const priceLabel = price ? formatPLN(price) : '—';
       card.innerHTML = `
         <div class="overdueText">${dueLabel} • ${escapeHtml(name)} • ${priceLabel}</div>
