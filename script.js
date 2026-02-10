@@ -1922,7 +1922,7 @@
     
     // Create popup
     const popup = document.createElement('div');
-    popup.className = 'dialog-wrap';
+    popup.className = 'dialog-wrap dayPopup';
     popup.style.display = 'flex';
     
     const dialog = document.createElement('div');
@@ -1957,7 +1957,7 @@
     }
     
     html += `<div class="footer" style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap">`;
-    html += `<button class="btn ghost" onclick="this.closest('.dialog-wrap').remove()">Zamknij</button>`;
+    html += `<button class="btn ghost" onclick="this.closest('.dialog-wrap').remove()">Anuluj</button>`;
     html += `<button class="btn primary" onclick="this.closest('.dialog-wrap').remove(); openTempChangeForDate('${dateStr}')">⚙ Zmiana</button>`;
     html += `</div>`;
     

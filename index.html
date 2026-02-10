@@ -218,6 +218,26 @@
     .footerRight{display:flex; gap:10px}
     .btn.danger{background:linear-gradient(145deg,#ef4444,#dc2626); border-color:transparent; color:#fff; font-weight:700}
     .btn.primary{background:linear-gradient(145deg,#1a2847,#0f1626); border-color:transparent; color:var(--text); font-weight:900}
+    /* Pill-style buttons for selected popups */
+    #timeOffApplyLength, #incomeCancelBtn, #incomeConfirmBtn, #tempChangeCancelBtn, #tempChangeSaveBtn,
+    #settingsCloseBtn, #saveDefaultPricingBtn, .dayPopup .btn {
+      border-radius:14px;
+      height:42px;
+      padding:0 18px;
+      font-weight:700;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    #timeOffApplyLength, #incomeConfirmBtn, #tempChangeSaveBtn, #saveDefaultPricingBtn, .dayPopup .btn.primary{
+      background:linear-gradient(145deg,#1a2847,#0f1626);
+      border-color:transparent;
+      color:var(--text);
+    }
+    #incomeCancelBtn, #tempChangeCancelBtn, #settingsCloseBtn, .dayPopup .btn.ghost{
+      background:transparent;
+      border:1px solid var(--border);
+      color:var(--text);
+    }
+    #incomeDialogWrap .footer .btn{flex:1; min-width:140px; max-width:220px}
 
     /* Upload (avatar) */
     .upload{display:flex; align-items:center; gap:12px; border:1px dashed var(--border); border-radius:16px; padding:12px; background:#0f1218; cursor:pointer}
@@ -556,6 +576,12 @@
       #incomeDialogWrap .dialog{ width:100%; max-width:520px; height:auto; max-height:80dvh; border-radius:16px; }
       #dialogWrap{ align-items:center; justify-content:center; padding:16px 12px; }
       #dialogWrap .dialog{ width:100%; max-width:520px; height:auto; max-height:85dvh; border-radius:16px; }
+      #monthSelectorWrap{ align-items:center; justify-content:center; padding:16px 12px; }
+      #monthSelectorWrap .dialog{ width:100%; max-width:360px; height:auto !important; max-height:80dvh !important; border-radius:16px; }
+      #tempChangePlanWrap{ align-items:center; justify-content:center; padding:16px 12px; }
+      #tempChangePlanWrap .planEditDialog{ width:100%; max-width:520px; height:auto; max-height:85dvh; border-radius:16px; }
+      .dayPopup{ align-items:center; justify-content:center; padding:16px 12px; }
+      .dayPopup .dialog{ width:100%; max-width:520px; height:auto !important; max-height:80dvh !important; border-radius:16px; }
     }
   </style>
 </head>
@@ -1024,14 +1050,10 @@
             <input class="price" id="defPriceS120" type="number" placeholder="140" style="flex:1; text-align:center" />
           </div>
         </div>
-        <div class="footer" style="margin-top:10px">
-          <button class="btn primary" id="saveDefaultPricingBtn">Zapisz domyślny cennik</button>
+        <div class="footer" style="margin-top:10px; justify-content:space-between">
+          <button class="btn ghost" id="settingsCloseBtn" style="min-width:140px">Anuluj</button>
+          <button class="btn primary" id="saveDefaultPricingBtn" style="min-width:140px">Zapisz</button>
         </div>
-      </div>
-
-      <div class="settings-section" style="border-top:1px solid var(--border); padding-top:16px; margin-top:16px">
-        <span class="settings-section-title">Zamknij</span>
-        <button class="btn ghost" id="settingsCloseBtn" style="width:100%">Anuluj</button>
       </div>
     </div>
   </div>
