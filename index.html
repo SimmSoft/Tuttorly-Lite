@@ -330,11 +330,11 @@
     .studentFooter .btn.primary{background:linear-gradient(145deg,#1a2847,#0f1626); border:none}
     .studentFooter .btn.ghost{background:transparent}
     .studentFooter .btn.danger{background:linear-gradient(145deg,#b91c1c,#7f1d1d); border:none}
-    .studentInfoRow{display:grid; grid-template-columns:84px 1fr; gap:4px; align-items:start}
+    .studentInfoRow{display:grid; grid-template-columns:76px 1fr; gap:8px; align-items:start}
     .studentInfoFields{display:flex; flex-direction:column; gap:3px}
-    .avatarTile{width:72px; height:72px; border-radius:18px; border:1px dashed var(--border); display:grid; place-items:center; background:#0f1218; cursor:pointer; align-self:start; margin-top:0}
+    .avatarTile{width:64px; height:64px; border-radius:16px; border:1px dashed var(--border); display:grid; place-items:center; background:#0f1218; cursor:pointer; align-self:start; margin-top:0}
     .studentInfoRow .row{margin:0}
-    .studentInfoRow .notesRow{grid-column:1 / -1}
+    .notesRowFull{grid-column:1 / -1}
     .avatarTile:hover{background:#121622}
     .timeOffTitle{display:flex; align-items:center; justify-content:center; position:relative; width:100%; text-align:center}
     .timeOffTitle::before{content:'☕'; position:absolute; left:0}
@@ -520,6 +520,14 @@
       .btn.primary, .btn.ghost, .btn.danger{flex:1; min-width:0}
     }
     @media (max-width:440px){ .phone{width:100%; height:calc(100vh - 48px)} }
+    @media (max-width:440px){
+      .studentInfoRow{grid-template-columns:72px 1fr; gap:10px}
+      .studentInfoFields{min-width:0}
+      .studentInfoRow input, .studentInfoRow textarea{width:100%}
+      .avatarTile{width:60px; height:60px}
+      .activeTypeGroup, .activeDurGroup{justify-content:center; width:100%}
+      .activeTypeBtn, .activeDurBtn{flex:1}
+    }
     
     /* --- Display-Mode (installed PWA) --- */
     @media (display-mode: standalone), (display-mode: fullscreen) {
@@ -546,6 +554,8 @@
     @media (max-width: 600px), (pointer: coarse) {
       #incomeDialogWrap{ align-items:center; justify-content:center; padding:16px 12px; }
       #incomeDialogWrap .dialog{ width:100%; max-width:520px; height:auto; max-height:80dvh; border-radius:16px; }
+      #dialogWrap{ align-items:center; justify-content:center; padding:16px 12px; }
+      #dialogWrap .dialog{ width:100%; max-width:520px; height:auto; max-height:85dvh; border-radius:16px; }
     }
   </style>
 </head>
@@ -801,14 +811,14 @@
         <div class="studentInfoFields">
           <div class="row"><input id="sName" placeholder="Imię i nazwisko" /></div>
           <div class="row"><input id="sPlace" placeholder="Miejsce (miasto, ulica)" /></div>
-          <div class="row notesRow"><textarea id="sNotes" placeholder="Notatki"></textarea></div>
         </div>
+        <div class="row notesRowFull"><textarea id="sNotes" placeholder="Notatki"></textarea></div>
       </div>
       <input type="file" id="sAvatar" accept="image/*" style="display:none" />
       <b id="avatarInfo" style="display:none">(opcjonalnie)</b>
 
       <div class="divider"><span>Aktywne zajęcia (domyślne)</span></div>
-      <div class="row" style="gap:10px">
+      <div class="row" style="gap:10px; flex-direction:column">
         <div class="activeTypeGroup">
           <button type="button" class="activeTypeBtn" data-type="remote">Zdalne</button>
           <button type="button" class="activeTypeBtn" data-type="station">Stacjonarne</button>

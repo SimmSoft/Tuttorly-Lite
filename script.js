@@ -521,7 +521,7 @@
       if(delBtn) delBtn.style.display='none';
       updateAvatarPreviewFrom('', null);
     }
-    setTimeout(()=>sName&&sName.focus(),50);
+    // no auto-focus on name
   }
   function closeDialog(){ dialog && (dialog.style.display='none'); }
   function closeIncomeDialog(){ const incomeDialog=el('incomeDialogWrap'); if(incomeDialog) incomeDialog.style.display='none'; }
