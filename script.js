@@ -342,7 +342,8 @@
     openIncomeDialog();
     if(studentId) setIncomeSelectedIds([studentId]);
     else setIncomeSelectedIds([]);
-    updateIncomeTypeButtons(lesson.type === 'ZD' ? 'online' : 'cash');
+    if(lesson.type === 'ZD') updateIncomeTypeButtons('online');
+    else clearIncomeTypeButtons();
     const dateInput = el('incomeDate');
     if(dateInput && dateStr) dateInput.value = dateStr;
     const searchInput = el('incomeStudentSearch');
@@ -854,7 +855,7 @@
 
   // --- INCOME ENTRIES LOGIC ---
   let pendingIncomeDeleteId = null;
-  let currentIncomeType = 'cash';
+  let currentIncomeType = '';
   let incomeSelectedStudentIds = [];
   let chartYear = new Date().getFullYear();
   
@@ -868,6 +869,14 @@
     el('incomeType').value = type;
     document.querySelectorAll('.incomeTypeBtn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.type === type);
+    });
+  }
+  function clearIncomeTypeButtons(){
+    currentIncomeType = '';
+    const typeInput = el('incomeType');
+    if(typeInput) typeInput.value = '';
+    document.querySelectorAll('.incomeTypeBtn').forEach(btn => {
+      btn.classList.remove('active');
     });
   }
   function renderIncomeSelectedList(){
@@ -971,7 +980,7 @@
     } else {
       title && (title.textContent = '\uD83E\uDDFE Nowy wpis dochod\u00F3w');
       amount && (amount.value = '');
-      updateIncomeTypeButtons('cash');
+      clearIncomeTypeButtons();
       setIncomeSelectedIds([]);
       note && (note.value = '');
       search && (search.value = '');
@@ -1208,7 +1217,7 @@
   el('incomeConfirmBtn')?.addEventListener('click', () => {
     const amountRaw = (el('incomeAmount')?.value || '').trim();
     const amount = Number(amountRaw);
-    const type = el('incomeType')?.value || 'online';
+    const type = (el('incomeType')?.value || '').trim();
     const date = el('incomeDate')?.value;
     const noteText = (el('incomeNote')?.value || '').trim();
     const searchText = (el('incomeStudentSearch')?.value || '').trim();
@@ -1232,7 +1241,11 @@
       return;
     }
     if(!date){
-      alert('Podaj datę');
+      alert('Podaj dat\u0119');
+      return;
+    }
+    if(type !== 'cash' && type !== 'online'){
+      alert('Wybierz typ p\u0142atno\u015bci');
       return;
     }
 
@@ -2797,6 +2810,4 @@
     renderMonthCalendar();
   }
   
-
-
 
