@@ -260,6 +260,7 @@
 
     /* Student picker */
     .studentPicker{position:relative; display:flex; flex-direction:column; width:100%}
+    .incomeSearchWrap{position:relative; width:100%}
     .studentPickerInput{width:100%; display:block}
     .studentPickerList{position:absolute; top:calc(100% + 6px); left:0; right:0; background:#0f1218; border:1px solid var(--border); border-radius:10px; max-height:180px; overflow:auto; z-index:25; display:none; box-shadow:0 6px 18px rgba(0,0,0,.25)}
     .studentPickerItem{padding:8px 10px; cursor:pointer; font-size:12px; display:flex; justify-content:space-between; gap:8px}
@@ -272,10 +273,78 @@
       font-size:14px;
     }
     #incomeDialogWrap .studentPickerItem .muted{font-size:12px}
-    .selectedStudents{display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; width:100%}
-    .selectedChip{background:#1a1e27; border:1px solid var(--border); color:var(--text); padding:4px 8px; border-radius:999px; font-size:11px; display:flex; align-items:center; gap:6px}
-    .selectedChip button{background:transparent; border:none; color:var(--muted); cursor:pointer; font-size:12px; line-height:1}
-    .selectedChip button:hover{color:var(--text)}
+    #incomeDialogWrap .studentPicker{gap:8px}
+    #incomeDialogWrap .selectedStudents{display:flex; flex-wrap:wrap; gap:8px; width:100%; margin:0}
+    #incomeDialogWrap .selectedStudents:empty{display:none}
+    #incomeDialogWrap .selectedChip{
+      background:#131b29;
+      border:1px solid var(--border);
+      color:var(--text);
+      border-radius:12px;
+      padding:4px 4px 4px 4px;
+      font-size:12px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      max-width:100%;
+      min-height:34px;
+    }
+    #incomeDialogWrap .selectedChipAvatar{
+      width:24px;
+      height:24px;
+      border-radius:7px;
+      background:linear-gradient(145deg,#2b3e61,#1a2438);
+      color:var(--text);
+      font-size:12px;
+      font-weight:700;
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+      flex-shrink:0;
+    }
+    #incomeDialogWrap .selectedChipAvatar img{width:100%; height:100%; object-fit:cover}
+    #incomeDialogWrap .selectedChipName{
+      color:var(--text);
+      font-size:14px;
+      font-weight:600;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:220px;
+    }
+    #incomeDialogWrap .selectedChipAction{
+      margin-left:2px;
+      padding-left:8px;
+      border-left:1px solid rgba(255,255,255,.14);
+      display:flex;
+      align-items:center;
+      flex-shrink:0;
+    }
+    #incomeDialogWrap .selectedChip button{
+      width:24px;
+      height:24px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.08);
+      background:#101826;
+      color:var(--muted);
+      cursor:pointer;
+      font-size:0;
+      display:grid;
+      place-items:center;
+      padding:0;
+      flex-shrink:0;
+    }
+    #incomeDialogWrap .selectedChip button svg{
+      width:12px;
+      height:12px;
+      display:block;
+      stroke:currentColor;
+      stroke-width:2.25;
+      stroke-linecap:round;
+      fill:none;
+      pointer-events:none;
+    }
+    #incomeDialogWrap .selectedChip button:hover{color:var(--text); background:#152033}
     
     /* Month Selector */
     .monthBtn{padding:12px 8px; border-radius:10px; border:1px solid var(--border); background:#1a1e27; color:var(--text); cursor:pointer; transition:all .15s ease; font-size:12px; font-weight:600; text-align:center}
@@ -928,9 +997,11 @@
       <div class="row"><input id="incomeDate" type="date" /></div>
       <div class="row">
         <div class="studentPicker" id="incomeStudentPicker">
-          <input id="incomeStudentSearch" class="studentPickerInput" type="text" placeholder="Wyszukaj ucznia (min. 1 litera)" />
-          <div class="studentPickerList" id="incomeStudentSuggestions"></div>
           <div class="selectedStudents" id="incomeSelectedList"></div>
+          <div class="incomeSearchWrap">
+            <input id="incomeStudentSearch" class="studentPickerInput" type="text" placeholder="Wyszukaj ucznia (min. 1 litera)" />
+            <div class="studentPickerList" id="incomeStudentSuggestions"></div>
+          </div>
         </div>
       </div>
       <div class="row"><input id="incomeNote" type="text" placeholder="Dopisek (opcjonalnie)" /></div>

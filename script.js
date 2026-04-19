@@ -875,15 +875,42 @@
     if(!listEl) return;
     listEl.innerHTML = "";
     incomeSelectedStudentIds.forEach(id => {
-      const name = getStudentDisplayNameById(id);
+      const s = getStudentById(id);
+      const name = s?.name || '';
       if(!name) return;
       const chip = document.createElement('div');
       chip.className = 'selectedChip';
-      chip.innerHTML = `<span>${escapeHtml(name)}</span><button type="button" aria-label="Usun">X</button>`;
-      chip.querySelector('button').addEventListener('click', () => {
+
+      const avatar = document.createElement('div');
+      avatar.className = 'selectedChipAvatar';
+      if(s?.avatar){
+        const img = document.createElement('img');
+        img.src = s.avatar;
+        img.alt = '';
+        avatar.appendChild(img);
+      } else {
+        avatar.textContent = getInitials(name);
+      }
+
+      const nameEl = document.createElement('span');
+      nameEl.className = 'selectedChipName';
+      nameEl.textContent = name;
+
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.setAttribute('aria-label', `Usuń ${name}`);
+      removeBtn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><line x1="6" y1="12" x2="18" y2="12"></line></svg>';
+      removeBtn.addEventListener('click', () => {
         incomeSelectedStudentIds = incomeSelectedStudentIds.filter(x => x !== id);
         renderIncomeSelectedList();
       });
+      const actionWrap = document.createElement('div');
+      actionWrap.className = 'selectedChipAction';
+      actionWrap.appendChild(removeBtn);
+
+      chip.appendChild(avatar);
+      chip.appendChild(nameEl);
+      chip.appendChild(actionWrap);
       listEl.appendChild(chip);
     });
   }
