@@ -325,11 +325,59 @@
     const v = s.pricing?.[key];
     return Number(v) || 0;
   }
+  function getLessonConfiguredPriceForIncome(studentId, lesson){
+    const s = getStudentById(studentId);
+    if(!s) return null;
+    const dur = getLessonDurationMinutes(lesson);
+    if(!dur) return null;
+    const typeKey = (lesson?.type === 'ST') ? 'station' : 'remote';
+    const key = typeKey + String(dur);
+    if(!Object.prototype.hasOwnProperty.call(s.pricing || {}, key)) return null;
+    const v = Number(s.pricing?.[key]);
+    return Number.isFinite(v) ? v : null;
+  }
+  function openIncomeDialogFromLesson(lesson, dateStr){
+    const studentId = resolveLessonStudentId(lesson);
+    const displayName = getLessonDisplayName(lesson);
+    openIncomeDialog();
+    if(studentId) setIncomeSelectedIds([studentId]);
+    else setIncomeSelectedIds([]);
+    updateIncomeTypeButtons(lesson.type === 'ZD' ? 'online' : 'cash');
+    const dateInput = el('incomeDate');
+    if(dateInput && dateStr) dateInput.value = dateStr;
+    const searchInput = el('incomeStudentSearch');
+    if(searchInput) searchInput.value = studentId ? '' : (displayName || '');
+    const amountInput = el('incomeAmount');
+    const configuredPrice = studentId ? getLessonConfiguredPriceForIncome(studentId, lesson) : null;
+    if(amountInput){
+      amountInput.value = configuredPrice === null ? '' : String(configuredPrice);
+    }
+  }
   function getLessonDisplayName(lesson){
     if(lesson && lesson.studentId){ const name = getStudentDisplayNameById(lesson.studentId); if(name) return name; }
     if(lesson && lesson.customName) return lesson.customName;
     if(lesson && lesson.student) return lesson.student;
     return '';
+  }
+  function resolveLessonStudentId(lesson){
+    if(lesson?.studentId && getStudentById(lesson.studentId)) return lesson.studentId;
+    const rawName = (lesson?.customName || lesson?.student || '').trim();
+    if(!rawName) return null;
+    const normalizeName = (v)=>
+      normalizeText(v)
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const normName = normalizeName(rawName);
+    const students = (state.students || []);
+    const exactMatches = students.filter(s => normalizeName(s.name) === normName);
+    if(exactMatches.length === 1) return exactMatches[0].id;
+    const partialMatches = students.filter(s => {
+      const studentNorm = normalizeName(s.name);
+      return studentNorm && (normName.includes(studentNorm) || studentNorm.includes(normName));
+    });
+    return partialMatches.length === 1 ? partialMatches[0].id : null;
   }
   function getEarningDescription(entry){
     const ids = Array.isArray(entry?.studentIds) ? entry.studentIds : [];
@@ -345,13 +393,14 @@
     if(names.length) return names.join(', ');
     return note;
   }
-  function getStudentsMatching(query){
+  function getStudentsMatching(query, minLen){
+    const min = Number.isFinite(Number(minLen)) ? Number(minLen) : 2;
     const q = normalizeText(query).trim();
-    if(q.length < 2) return [];
+    if(q.length < min) return [];
     return state.students.filter(s => normalizeText(s.name).includes(q));
   }
-  function renderStudentSuggestions(listEl, query, excludeIds){
-    const matches = getStudentsMatching(query).filter(s => !excludeIds || !excludeIds.includes(s.id));
+  function renderStudentSuggestions(listEl, query, excludeIds, minLen){
+    const matches = getStudentsMatching(query, minLen).filter(s => !excludeIds || !excludeIds.includes(s.id));
     if(!listEl) return;
     if(matches.length === 0){
       listEl.style.display = 'none';
@@ -848,7 +897,7 @@
     if(!input || !listEl) return;
     const hide = ()=>{ listEl.style.display = 'none'; listEl.innerHTML = ''; };
     const render = ()=>{
-      renderStudentSuggestions(listEl, input.value, incomeSelectedStudentIds);
+      renderStudentSuggestions(listEl, input.value, incomeSelectedStudentIds, 1);
     };
     input.addEventListener('input', render);
     input.addEventListener('focus', render);
@@ -1077,6 +1126,10 @@
     ctx.fillText('Online', padLeft + 119, legendY + 5);
   }
 
+  function formatEarningEntryAmount(amount){
+    return Number(amount) === 0 ? 'Darmowe Zajęcia' : formatPLN(amount);
+  }
+
   function renderEarnings(){
     const list = el('earningsList');
     if(!list) return;
@@ -1100,7 +1153,7 @@
       
       card.innerHTML = `
         <div style="flex:1">
-          <div class="name">${formatPLN(entry.amount)} <span style="font-size:12px; color:var(--muted)">${typeLabel}</span></div>
+          <div class="name">${formatEarningEntryAmount(entry.amount)} <span style="font-size:12px; color:var(--muted)">${typeLabel}</span></div>
           <div class="sub">${dateStr}${desc ? ' · ' + escapeHtml(desc) : ''}</div>
         </div>`;
       
@@ -1127,7 +1180,8 @@
   el('incomeCancelBtn')?.addEventListener('click', () => closeIncomeDialog());
   
   el('incomeConfirmBtn')?.addEventListener('click', () => {
-    const amount = Number(el('incomeAmount')?.value);
+    const amountRaw = (el('incomeAmount')?.value || '').trim();
+    const amount = Number(amountRaw);
     const type = el('incomeType')?.value || 'online';
     const date = el('incomeDate')?.value;
     const noteText = (el('incomeNote')?.value || '').trim();
@@ -1143,8 +1197,12 @@
     }
     const description = getEarningDescription({ studentIds, noteText: extraNote });
 
-    if(!amount || amount <= 0){
-      alert('Podaj kwotę większą niż 0');
+    if(amountRaw === '' || Number.isNaN(amount)){
+      alert('Podaj kwotę');
+      return;
+    }
+    if(amount < 0){
+      alert('Podaj kwotę większą lub równą 0');
       return;
     }
     if(!date){
@@ -1185,7 +1243,7 @@
     if(!incomeDialog?.dataset.editId) return;
     pendingIncomeDeleteId = incomeDialog.dataset.editId;
     const entry = state.earnings.find(e => e.id === pendingIncomeDeleteId);
-    const txt = `Na pewno chcesz usunąć wpis ${formatPLN(entry?.amount || 0)}? Tej operacji nie można cofnąć.`;
+    const txt = `Na pewno chcesz usunąć wpis ${formatEarningEntryAmount(entry?.amount || 0)}? Tej operacji nie można cofnąć.`;
     if(confirm(txt)){
       state.earnings = state.earnings.filter(e => e.id !== pendingIncomeDeleteId);
       save();
@@ -1461,6 +1519,14 @@
     const d = new Date(dateStr + 'T00:00:00');
     return d >= start && d <= end;
   }
+  function hasIncomeForStudentOnDate(studentId, dateStr){
+    if(!studentId || !dateStr) return false;
+    return (state.earnings || []).some(entry => {
+      if(!entry || entry.date !== dateStr) return false;
+      const ids = Array.isArray(entry.studentIds) ? entry.studentIds : [];
+      return ids.includes(studentId);
+    });
+  }
   function getPaidStudentIdsForRange(start, end){
     const paid = new Set();
     (state.earnings || []).forEach(entry => {
@@ -1618,18 +1684,18 @@
     for(let i = 1; i <= weeksToCheck; i++){
       const weekStart = new Date(currentWeekStart);
       weekStart.setDate(currentWeekStart.getDate() - i * 7);
-      const weekEnd = getWeekEnd(weekStart);
-      const paidSet = getPaidStudentIdsForRange(weekStart, weekEnd);
       for(let d = 0; d < 7; d++){
         const day = new Date(weekStart);
         day.setDate(weekStart.getDate() + d);
+        const dayStr = getDateStr(day);
         const lessons = getLessonsForDate(day);
         lessons.forEach(lesson => {
-          if(!lesson.studentId) return;
-          if(paidSet.has(lesson.studentId)) return;
+          const studentId = resolveLessonStudentId(lesson);
+          if(!studentId) return;
+          if(hasIncomeForStudentOnDate(studentId, dayStr)) return;
           result.push({
-            studentId: lesson.studentId,
-            dueDate: getDateStr(day),
+            studentId,
+            dueDate: dayStr,
             lesson
           });
         });
@@ -1689,8 +1755,6 @@
     const now = new Date();
     const day = now.getDay();
     const monday = getWeekStart(now);
-    const weekEnd = getWeekEnd(monday);
-    const paidSet = getPaidStudentIdsForRange(monday, weekEnd);
 
     const todayDayNum = day === 0 ? 7 : day;
     
@@ -1734,10 +1798,12 @@
           item.className = 'lessonItem';
 
           const displayName = getLessonDisplayName(lesson);
-          const hasStudentId = !!lesson.studentId;
-          const isPaid = hasStudentId && paidSet.has(lesson.studentId);
+          const resolvedStudentId = resolveLessonStudentId(lesson);
+          const hasStudentId = !!resolvedStudentId;
+          const isPaid = hasStudentId && hasIncomeForStudentOnDate(resolvedStudentId, dateStr);
+          const canOpenIncome = !isPaid;
           let html = `<div class="lessonMetaRow">`;
-          html += `<label class="lessonPaymentCheck"><input type="checkbox" class="paymentCheckbox" disabled ${isPaid ? 'checked' : ''} /></label>`;
+          html += `<label class="lessonPaymentCheck"><input type="checkbox" class="paymentCheckbox" ${canOpenIncome ? '' : 'disabled'} ${isPaid ? 'checked' : ''} /></label>`;
           html += `<div class="lessonTypeAndStudent">`;
           html += `<span class="lessonTime">${lesson.startTime} - ${lesson.endTime}</span>`;
           html += `<span class="lessonType ${lesson.type.toLowerCase()}">${lesson.type}</span>`;
@@ -1747,6 +1813,20 @@
           if(lesson.note) html += `<div class="lessonNote">${lesson.note}</div>`;
 
           item.innerHTML = html;
+          const paymentCheckbox = item.querySelector('.paymentCheckbox');
+          const lessonInfo = item.querySelector('.lessonTypeAndStudent');
+          const openFromRow = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openIncomeDialogFromLesson(lesson, dateStr);
+          };
+          if(paymentCheckbox && canOpenIncome){
+            paymentCheckbox.addEventListener('click', openFromRow);
+          }
+          if(lessonInfo && canOpenIncome){
+            lessonInfo.style.cursor = 'pointer';
+            lessonInfo.addEventListener('click', openFromRow);
+          }
           lessonsList.appendChild(item);
         });
       }
