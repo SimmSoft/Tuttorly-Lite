@@ -237,7 +237,8 @@
       border:1px solid var(--border);
       color:var(--text);
     }
-    #incomeDialogWrap .footer .btn{flex:1; min-width:140px; max-width:220px}
+    .incomeFooterActions{display:flex; justify-content:center; gap:10px; width:100%; max-width:430px; margin:0 auto}
+    #incomeDialogWrap .incomeFooterActions .btn{flex:1; min-width:148px; max-width:220px; padding:0 22px}
 
     /* Upload (avatar) */
     .upload{display:flex; align-items:center; gap:12px; border:1px dashed var(--border); border-radius:16px; padding:12px; background:#0f1218; cursor:pointer}
@@ -257,6 +258,33 @@
     .incomeTypeBtn{flex:1; height:48px; border-radius:14px; border:1px solid var(--border); background:#1a1e27; color:var(--muted); cursor:pointer; transition:all .15s ease; font-weight:600; font-size:14px}
     .incomeTypeBtn:hover{background:#1f2430}
     .incomeTypeBtn.active{background:linear-gradient(145deg,#1a2847,#0f1626); border:none; color:var(--text); font-weight:700}
+    .incomeDialogHeader{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:10px 0 8px}
+    .incomeDialogHeader h3{margin:0}
+    #incomeDeleteBtn{
+      width:44px;
+      height:44px;
+      border-radius:13px;
+      border:1px solid rgba(239,68,68,.35);
+      background:rgba(239,68,68,.14);
+      color:#ef4444;
+      cursor:pointer;
+      display:none;
+      place-items:center;
+      padding:0;
+      transition:all .15s ease;
+      flex-shrink:0;
+    }
+    #incomeDeleteBtn:hover{background:rgba(239,68,68,.2); border-color:rgba(239,68,68,.5)}
+    #incomeDeleteBtn svg{
+      width:20px;
+      height:20px;
+      stroke:currentColor;
+      stroke-width:2;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+      fill:none;
+      pointer-events:none;
+    }
 
     /* Student picker */
     .studentPicker{position:relative; display:flex; flex-direction:column; width:100%}
@@ -418,14 +446,40 @@
     .planEditDialog{width:100%; max-width:680px; background:#0f1218; border:1px solid var(--border); border-radius:16px; padding:14px; box-shadow:var(--shadow); display:flex; flex-direction:column; gap:12px}
     #editPlanDaySelector{display:grid; grid-template-columns:1fr 1fr; gap:8px; max-height:56vh; overflow-y:auto; padding-right:2px}
     .planEditDialog h2{margin:0 0 8px 0; font-size:18px; color:var(--text)}
-    .studentDialogTitle{display:flex; align-items:center; justify-content:center; position:relative; width:100%; text-align:center}
-    .studentDialogTitle::before{content:'✍️'; position:absolute; left:0}
-    .studentDialogTitle::after{content:'✍️'; position:absolute; right:0}
-    .studentFooter{display:flex; gap:8px; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-top:12px}
+    .studentDialogHeader{display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 8px}
+    .studentDialogHeader h3{margin:0}
+    #deleteBtn{
+      width:44px;
+      height:44px;
+      border-radius:13px;
+      border:1px solid rgba(239,68,68,.35);
+      background:rgba(239,68,68,.14);
+      color:#ef4444;
+      cursor:pointer;
+      display:none;
+      place-items:center;
+      padding:0;
+      transition:all .15s ease;
+      flex-shrink:0;
+    }
+    #deleteBtn:hover{background:rgba(239,68,68,.2); border-color:rgba(239,68,68,.5)}
+    #deleteBtn svg{
+      width:20px;
+      height:20px;
+      stroke:currentColor;
+      stroke-width:2;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+      fill:none;
+      pointer-events:none;
+    }
+    .studentFooter{display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; margin-top:12px}
     .studentFooter .btn{height:40px; padding:0 14px; border-radius:10px; border:1px solid var(--border); background:#1a1e27; color:var(--text); font-weight:700}
     .studentFooter .btn.primary{background:linear-gradient(145deg,#1a2847,#0f1626); border:none}
     .studentFooter .btn.ghost{background:transparent}
     .studentFooter .btn.danger{background:linear-gradient(145deg,#b91c1c,#7f1d1d); border:none}
+    .studentFooterActions{display:flex; justify-content:center; gap:10px; width:100%}
+    .studentFooterActions .btn{min-width:148px; padding:0 22px}
     .studentInfoRow{display:grid; grid-template-columns:76px 1fr; gap:8px; align-items:start}
     .studentInfoFields{display:flex; flex-direction:column; gap:3px}
     .avatarTile{width:64px; height:64px; border-radius:16px; border:1px dashed var(--border); display:grid; place-items:center; background:#0f1218; cursor:pointer; align-self:start; margin-top:0}
@@ -439,8 +493,9 @@
     .dayColumn{background:#1a1e27; border:1px solid var(--border); border-radius:10px; padding:8px; display:flex; flex-direction:column; gap:6px}
     .dayColumn h3{margin:0 0 6px 0; font-size:13px; color:var(--accent); font-weight:700}
     .lessonRow{background:#0f1218; border:1px solid rgba(255,255,255,.08); border-radius:8px; padding:8px; display:grid; grid-template-columns:1fr; gap:5px; font-size:11px}
+    .lessonRowTop{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:6px; align-items:center}
     .lessonRow input, .lessonRow select{font-size:11px; padding:6px 8px; height:auto}
-    .lessonRowTime{display:grid; grid-template-columns:70px 1fr; gap:6px; align-items:center}
+    .lessonRowTime{display:grid; grid-template-columns:70px 1fr; gap:6px; align-items:center; min-width:0}
     .lessonRowTime input{font-size:10px}
     .durationButtonGroup{display:flex; gap:2px; flex-wrap:wrap}
     .durationBtn{padding:4px 6px; font-size:9px; font-weight:600; border:1px solid rgba(93,215,239,.4); border-radius:4px; background:transparent; color:var(--muted); cursor:pointer; transition:all .15s ease; white-space:nowrap}
@@ -453,10 +508,32 @@
     .typeBtn.st.active{background:var(--accent-2); color:#fff}
     .typeBtn.zd{background:transparent; color:var(--muted)}
     .typeBtn.zd.active{background:var(--accent); color:#fff}
-    .lessonRowActions{display:grid; grid-template-columns:1fr; gap:4px; justify-items:center}
-    .lessonRowActions button{font-size:10px; padding:6px 12px;width: 100px; height:28px; background:linear-gradient(135deg,#4a4a4a,#2d2d2d); border:none; color:#e5e5e5; font-weight:600; border-radius:6px; cursor:pointer; transition:all .15s ease}
-    .lessonRowActions button:hover{filter:brightness(1.1)}
-    .lessonRowActions button:active{transform:scale(.98)}
+    .lessonDeleteBtn{
+      width:28px;
+      height:28px;
+      border-radius:8px;
+      border:1px solid rgba(239,68,68,.32);
+      background:rgba(239,68,68,.12);
+      color:#ef4444;
+      cursor:pointer;
+      display:grid;
+      place-items:center;
+      justify-self:end;
+      align-self:center;
+      padding:0;
+      transition:all .15s ease;
+    }
+    .lessonDeleteBtn:hover{background:rgba(239,68,68,.18); border-color:rgba(239,68,68,.5)}
+    .lessonDeleteBtn svg{
+      width:14px;
+      height:14px;
+      stroke:currentColor;
+      stroke-width:2;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+      fill:none;
+      pointer-events:none;
+    }
     .addLessonBtn{background:rgba(93,215,239,.15); border:1px dashed var(--accent); color:var(--accent); padding:6px; border-radius:8px; cursor:pointer; font-size:10px; font-weight:600; transition:all .15s ease; margin-top:2px}
     .addLessonBtn:hover{background:rgba(93,215,239,.25)}
 
@@ -905,7 +982,18 @@
   <!-- DIALOG -->
   <div class="dialog-wrap" id="dialogWrap">
     <div class="dialog">
-      <h3 id="dialogTitle" class="studentDialogTitle">Nowy uczeń</h3>
+      <div class="studentDialogHeader">
+        <h3 id="dialogTitle">Nowy uczeń</h3>
+        <button id="deleteBtn" type="button" aria-label="Usuń ucznia">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M3 6h18"></path>
+            <path d="M8 6V4h8v2"></path>
+            <path d="M6 6l1 14h10l1-14"></path>
+            <path d="M10 11v6"></path>
+            <path d="M14 11v6"></path>
+          </svg>
+        </button>
+      </div>
       <div class="studentInfoRow">
         <div id="avatarUpload" class="avatarTile" title="Kliknij, aby wybrać avatar">
           <div id="avatarPreview" class="avatar big"></div>
@@ -957,8 +1045,7 @@
       </div>
 
       <div class="studentFooter">
-        <button class="btn danger" id="deleteBtn" style="display:none">Usuń ucznia</button>
-        <div style="display:flex; gap:8px; margin-left:auto">
+        <div class="studentFooterActions">
           <button class="btn ghost" id="cancelDialog">Anuluj</button>
           <button class="btn primary" id="confirmDialog">Zapisz</button>
         </div>
@@ -984,7 +1071,18 @@
   <!-- INCOME ENTRY MODAL -->
   <div class="dialog-wrap" id="incomeDialogWrap">
     <div class="dialog" style="display:flex; flex-direction:column">
-      <h3 id="incomeDialogTitle">Nowy wpis dochodów</h3>
+      <div class="incomeDialogHeader">
+        <h3 id="incomeDialogTitle">&#x1F9FE; Nowy wpis dochod&#243;w</h3>
+        <button id="incomeDeleteBtn" type="button" aria-label="Usuń wpis dochodów">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M3 6h18"></path>
+            <path d="M8 6V4h8v2"></path>
+            <path d="M6 6l1 14h10l1-14"></path>
+            <path d="M10 11v6"></path>
+            <path d="M14 11v6"></path>
+          </svg>
+        </button>
+      </div>
       
       <div class="row"><input id="incomeAmount" type="number" placeholder="Kwota (PLN)" step="0.01" inputmode="decimal" /></div>
       
@@ -1007,8 +1105,7 @@
       <div class="row"><input id="incomeNote" type="text" placeholder="Dopisek (opcjonalnie)" /></div>
       
       <div class="footer" style="margin-top:auto">
-        <button class="btn danger" id="incomeDeleteBtn" style="display:none">Usuń</button>
-        <div class="footerRight">
+        <div class="footerRight incomeFooterActions">
           <button class="btn ghost" id="incomeCancelBtn">Anuluj</button>
           <button class="btn primary" id="incomeConfirmBtn">Zapisz</button>
         </div>

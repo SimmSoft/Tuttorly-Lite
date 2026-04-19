@@ -555,13 +555,13 @@
     const aInfo=el('avatarInfo'); const delBtn=el('deleteBtn');
 
     if(editId){ const s=state.students.find(x=>x.id===editId); if(!s) return;
-      title && (title.textContent='Edytuj ucznia'); sName && (sName.value=s.name||''); sPlace && (sPlace.value=s.place||''); sNotes && (sNotes.value=s.notes||'');
+      title && (title.textContent='\u270D\uFE0F Edytuj ucznia'); sName && (sName.value=s.name||''); sPlace && (sPlace.value=s.place||''); sNotes && (sNotes.value=s.notes||'');
       pR60 && (pR60.value=s.pricing?.remote60??''); pR90 && (pR90.value=s.pricing?.remote90??''); pR120 && (pR120.value=s.pricing?.remote120??'');
       pS60 && (pS60.value=s.pricing?.station60??''); pS90 && (pS90.value=s.pricing?.station90??''); pS120 && (pS120.value=s.pricing?.station120??'');
       setPricingPlaceholders();
       aInfo && (aInfo.textContent=s.avatar?'ustawiono':'(opcjonalnie)');
       setActiveButtons(s.active?.type||'remote', s.active?.dur||60); dialog.dataset.editId=editId;
-      if(delBtn) delBtn.style.display='inline-flex';
+      if(delBtn) delBtn.style.display='grid';
       updateAvatarPreviewFrom(s.name, s.avatar);
     } else {
       title && (title.textContent='Nowy uczeń'); sName && (sName.value=''); sPlace && (sPlace.value=''); sNotes && (sNotes.value='');
@@ -959,17 +959,17 @@
     if(editId){
       const entry = state.earnings.find(e => e.id === editId);
       if(!entry) return;
-      title && (title.textContent = 'Edytuj wpis dochodów');
+      title && (title.textContent = '\uD83E\uDDFE Edytuj wpis dochod\u00F3w');
       amount && (amount.value = entry.amount);
       updateIncomeTypeButtons(entry.type);
       date && (date.value = entry.date);
       setIncomeSelectedIds(entry.studentIds || []);
       note && (note.value = entry.noteText || '');
       search && (search.value = '');
-      if(delBtn) delBtn.style.display = 'inline-flex';
+      if(delBtn) delBtn.style.display = 'grid';
       incomeDialog.dataset.editId = editId;
     } else {
-      title && (title.textContent = 'Nowy wpis dochodów');
+      title && (title.textContent = '\uD83E\uDDFE Nowy wpis dochod\u00F3w');
       amount && (amount.value = '');
       updateIncomeTypeButtons('cash');
       setIncomeSelectedIds([]);
@@ -1035,8 +1035,7 @@
     drawChart(year);
     renderOverduePayments();
   }
-
-
+  
 
   function drawChart(year){
     const canvas = el('earningsChart');
@@ -2205,13 +2204,24 @@
     row.dataset.studentId = lesson.studentId || '';
     
     row.innerHTML = `
-      <div class="lessonRowTime">
-        <input type="time" value="${lesson.startTime}" class="lessonStart" />
-        <div class="durationButtonGroup" data-duration="${duration}">
-          <button type="button" class="durationBtn ${duration === 60 ? 'active' : ''}" data-duration="60">60</button>
-          <button type="button" class="durationBtn ${duration === 90 ? 'active' : ''}" data-duration="90">90</button>
-          <button type="button" class="durationBtn ${duration === 120 ? 'active' : ''}" data-duration="120">120</button>
+      <div class="lessonRowTop">
+        <div class="lessonRowTime">
+          <input type="time" value="${lesson.startTime}" class="lessonStart" />
+          <div class="durationButtonGroup" data-duration="${duration}">
+            <button type="button" class="durationBtn ${duration === 60 ? 'active' : ''}" data-duration="60">60</button>
+            <button type="button" class="durationBtn ${duration === 90 ? 'active' : ''}" data-duration="90">90</button>
+            <button type="button" class="durationBtn ${duration === 120 ? 'active' : ''}" data-duration="120">120</button>
+          </div>
         </div>
+        <button type="button" class="lessonDeleteBtn" aria-label="Usuń lekcję">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M3 6h18"></path>
+            <path d="M8 6V4h8v2"></path>
+            <path d="M6 6l1 14h10l1-14"></path>
+            <path d="M10 11v6"></path>
+            <path d="M14 11v6"></path>
+          </svg>
+        </button>
       </div>
       <div class="lessonRowTypeStudent">
         <div class="typeButtonGroup">
@@ -2224,9 +2234,6 @@
         </div>
       </div>
       <input type="text" class="lessonNoteInput" value="${lesson.note}" placeholder="Notatka" />
-      <div class="lessonRowActions">
-        <button type="button" class="deleteBtn">✕ Usuń lekcję</button>
-      </div>
     `;
     
     // Setup type button handlers
@@ -2256,7 +2263,7 @@
     });
     
     // Setup delete button
-    row.querySelector('.deleteBtn').addEventListener('click', () => {
+    row.querySelector('.lessonDeleteBtn').addEventListener('click', () => {
       row.remove();
     });
     
@@ -2790,3 +2797,6 @@
     renderMonthCalendar();
   }
   
+
+
+
