@@ -1566,6 +1566,41 @@
       return ids.includes(studentId);
     });
   }
+  function normalizeIncomeMatchText(value){
+    return normalizeText(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  function hasIncomeForLessonOnDate(lesson, dateStr){
+    if(!lesson || !dateStr) return false;
+    const studentId = resolveLessonStudentId(lesson);
+    if(studentId) return hasIncomeForStudentOnDate(studentId, dateStr);
+
+    const lessonName = normalizeIncomeMatchText(getLessonDisplayName(lesson));
+    if(!lessonName) return false;
+
+    return (state.earnings || []).some(entry => {
+      if(!entry || entry.date !== dateStr) return false;
+
+      const ids = Array.isArray(entry.studentIds) ? entry.studentIds : [];
+      if(ids.length){
+        const linkedNames = ids
+          .map(getStudentDisplayNameById)
+          .filter(Boolean)
+          .map(normalizeIncomeMatchText);
+        if(linkedNames.includes(lessonName)) return true;
+      }
+
+      const note = normalizeIncomeMatchText(entry?.noteText || entry?.description || '');
+      if(!note) return false;
+      if(note === lessonName) return true;
+
+      const parts = note.split(/[;,]/).map(x => x.trim()).filter(Boolean);
+      return parts.includes(lessonName);
+    });
+  }
   function getPaidStudentIdsForRange(start, end){
     const paid = new Set();
     (state.earnings || []).forEach(entry => {
@@ -1837,9 +1872,7 @@
           item.className = 'lessonItem';
 
           const displayName = getLessonDisplayName(lesson);
-          const resolvedStudentId = resolveLessonStudentId(lesson);
-          const hasStudentId = !!resolvedStudentId;
-          const isPaid = hasStudentId && hasIncomeForStudentOnDate(resolvedStudentId, dateStr);
+          const isPaid = hasIncomeForLessonOnDate(lesson, dateStr);
           const canOpenIncome = !isPaid;
           let html = `<div class="lessonMetaRow">`;
           html += `<label class="lessonPaymentCheck"><input type="checkbox" class="paymentCheckbox" ${canOpenIncome ? '' : 'disabled'} ${isPaid ? 'checked' : ''} /></label>`;
@@ -2810,4 +2843,3 @@
     renderMonthCalendar();
   }
   
-
